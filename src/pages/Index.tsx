@@ -3,12 +3,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Camera, Search, Shield, Sparkles, Upload, Mic, CheckCircle } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import marketplaceHero from "@/assets/marketplace-hero.jpg";
 import uploadFeature from "@/assets/upload-feature.jpg";
 import searchFeature from "@/assets/search-feature.jpg";
 
 const Index = () => {
   const [userRole, setUserRole] = useState<'buyer' | 'seller' | null>(null);
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-background">
@@ -23,7 +25,7 @@ const Index = () => {
           </div>
           <div className="ml-auto flex items-center space-x-4">
             <Button variant="ghost">Sign In</Button>
-            <Button variant="hero">Get Started</Button>
+            <Button variant="hero" onClick={() => navigate('/chat')}>Get Started</Button>
           </div>
         </div>
       </nav>
@@ -57,7 +59,7 @@ const Index = () => {
             <Button 
               size="lg" 
               variant="hero"
-              onClick={() => setUserRole('buyer')}
+              onClick={() => navigate('/chat')}
               className="text-lg"
             >
               <Upload className="w-5 h-5 mr-2" />
@@ -66,7 +68,7 @@ const Index = () => {
             <Button 
               size="lg" 
               variant="marketplace"
-              onClick={() => setUserRole('seller')}
+              onClick={() => navigate('/chat')}
               className="text-lg"
             >
               <Search className="w-5 h-5 mr-2" />
@@ -240,10 +242,10 @@ const Index = () => {
             Join thousands of users already enjoying smarter buying and selling
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" variant="hero" className="text-lg">
+            <Button size="lg" variant="hero" className="text-lg" onClick={() => navigate('/chat')}>
               Start Selling Today
             </Button>
-            <Button size="lg" variant="marketplace" className="text-lg">
+            <Button size="lg" variant="marketplace" className="text-lg" onClick={() => navigate('/chat')}>
               Browse Products
             </Button>
           </div>
