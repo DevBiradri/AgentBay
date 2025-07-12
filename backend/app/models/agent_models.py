@@ -10,6 +10,7 @@ class Product(BaseModel):
     condition: str
     category: str
     suggested_price: Optional[float] = None
+    current_bid: Optional[float] = None
     tags: List[str] = []
     brand: Optional[str] = None
     model: Optional[str] = None

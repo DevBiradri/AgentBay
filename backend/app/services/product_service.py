@@ -8,7 +8,7 @@ from sqlalchemy import or_, and_
 
 from ..database import get_db, DatabaseManager
 from ..models.db_models import ProductDB
-from ..models.product import Product
+from ..models.agent_models import Product
 from ..models.converters.converters import product_db_to_pydantic, product_pydantic_to_db
 
 logger = logging.getLogger(__name__)
@@ -49,18 +49,6 @@ class ProductService:
         finally:
             self.db_manager.close_session(session)
     
-    def get_product_by_title(self, title: str) -> Optional[ProductDB]:
-        """Get a product by its title"""
-        session = self.db_manager.create_session()
-        try:
-            product = session.query(ProductDB).filter(ProductDB.title == title).first()
-            return product
-        except Exception as e:
-            logger.error(f"Error getting product by title '{title}': {e}")
-            return None
-        finally:
-            self.db_manager.close_session(session)
-    
     def get_all_products(self, limit: int = 100, offset: int = 0) -> List[ProductDB]:
         """Get all products with pagination"""
         session = self.db_manager.create_session()
@@ -69,70 +57,6 @@ class ProductService:
             return products
         except Exception as e:
             logger.error(f"Error getting all products: {e}")
-            return []
-        finally:
-            self.db_manager.close_session(session)
-    
-    def search_products(
-        self, 
-        query: str = "", 
-        category: str = "", 
-        brand: str = "",
-        min_price: float = None,
-        max_price: float = None,
-        limit: int = 50,
-        offset: int = 0
-    ) -> List[ProductDB]:
-        """Search products based on various criteria"""
-        session = self.db_manager.create_session()
-        try:
-            # Start with base query
-            query_builder = session.query(ProductDB)
-            
-            filters = []
-            
-            # Text search across title, description, brand, model, and tags
-            if query:
-                query_lower = f"%{query.lower()}%"
-                text_filters = or_(
-                    ProductDB.title.ilike(query_lower),
-                    ProductDB.description.ilike(query_lower),
-                    ProductDB.brand.ilike(query_lower),
-                    ProductDB.model.ilike(query_lower),
-                    ProductDB.tags.astext.ilike(query_lower)
-                )
-                filters.append(text_filters)
-            
-            # Category filter
-            if category:
-                filters.append(ProductDB.category.ilike(f"%{category}%"))
-            
-            # Brand filter
-            if brand:
-                filters.append(ProductDB.brand.ilike(f"%{brand}%"))
-            
-            # Price filters
-            if min_price is not None:
-                filters.append(ProductDB.suggested_price >= min_price)
-            
-            if max_price is not None:
-                filters.append(ProductDB.suggested_price <= max_price)
-            
-            # Apply all filters
-            if filters:
-                query_builder = query_builder.filter(and_(*filters))
-            
-            # Order by created_at (newest first)
-            query_builder = query_builder.order_by(ProductDB.created_at.desc())
-            
-            # Apply pagination
-            products = query_builder.offset(offset).limit(limit).all()
-            
-            logger.info(f"Found {len(products)} products matching search criteria")
-            return products
-            
-        except Exception as e:
-            logger.error(f"Error searching products: {e}")
             return []
         finally:
             self.db_manager.close_session(session)
@@ -187,46 +111,6 @@ class ProductService:
         finally:
             self.db_manager.close_session(session)
     
-    def get_products_by_category(self, category: str, limit: int = 50) -> List[ProductDB]:
-        """Get products by category"""
-        session = self.db_manager.create_session()
-        try:
-            products = session.query(ProductDB).filter(
-                ProductDB.category.ilike(f"%{category}%")
-            ).limit(limit).all()
-            return products
-        except Exception as e:
-            logger.error(f"Error getting products by category '{category}': {e}")
-            return []
-        finally:
-            self.db_manager.close_session(session)
-    
-    def get_products_by_brand(self, brand: str, limit: int = 50) -> List[ProductDB]:
-        """Get products by brand"""
-        session = self.db_manager.create_session()
-        try:
-            products = session.query(ProductDB).filter(
-                ProductDB.brand.ilike(f"%{brand}%")
-            ).limit(limit).all()
-            return products
-        except Exception as e:
-            logger.error(f"Error getting products by brand '{brand}': {e}")
-            return []
-        finally:
-            self.db_manager.close_session(session)
-    
-    def count_products(self) -> int:
-        """Count total number of products"""
-        session = self.db_manager.create_session()
-        try:
-            count = session.query(ProductDB).count()
-            return count
-        except Exception as e:
-            logger.error(f"Error counting products: {e}")
-            return 0
-        finally:
-            self.db_manager.close_session(session)
-
     def get_product_as_pydantic(self, product_id: int) -> Optional[Product]:
         """Get a product as a Pydantic model"""
         product_db = self.get_product_by_id(product_id)

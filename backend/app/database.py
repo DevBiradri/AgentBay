@@ -14,7 +14,7 @@ load_dotenv()
 # Database URL - you can set this as an environment variable
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://username:password@localhost:5432/agentbay_db"
+    "postgresql://postgres:123@localhost:5432/agentbay_db"
 )
 
 # Create SQLAlchemy engine

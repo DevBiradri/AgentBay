@@ -1,6 +1,8 @@
+import fastapi
 from fastapi import FastAPI, HTTPException, Depends, Query, File, UploadFile, Form
 from fastapi.responses import FileResponse
-import fastapi
+from fastapi.middleware.cors import CORSMiddleware
+
 from typing import Optional
 import os
 import uuid
@@ -9,17 +11,26 @@ import json
 from pathlib import Path
 
 from ..agents.listing_agent.agent import ListingAgentOrchestrator
+from ..agents.recommendation_agent.agent import RecommendationAgentOrchestrator
 
 from ..services.product_service import ProductService
 from ..services.bid_service import BidService
 
 from ..models.agent_models import Product, Bid
-from ..models.request_models import BidCreateRequest, ProductCreateRequest
+from ..models.request_models import BidCreateRequest, ProductCreateRequest, RecommendationRequest
 from ..models.converters.converters import product_db_to_pydantic, bid_db_to_pydantic
 
 from ..enums.enums import BidStatus
 
 app = FastAPI(title="AgentBay API", description="API for AgentBay auction platform")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Update with frontend's URL for better security
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Dependency injection
 def get_product_service():
@@ -112,6 +123,16 @@ async def create_listing(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to process listing: {str(e)}")
+
+@app.post("/api/agent/recommendations")
+async def get_recommendations(request: RecommendationRequest):
+    recommendation_agent = RecommendationAgentOrchestrator()
+    result = await recommendation_agent.process_recommendation_request(
+        query_string=request.query_string
+    )
+    if result.get("status") != "success":
+        raise HTTPException(status_code=500, detail=result.get("error_message", "Unknown error occurred."))
+    return result
 
 # === PRODUCT ENDPOINTS ===
 

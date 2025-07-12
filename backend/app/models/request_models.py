@@ -19,3 +19,6 @@ class BidCreateRequest(BaseModel):
     amount: float
     is_auto_bid: bool = False
     max_auto_bid: Optional[float] = None
+
+class RecommendationRequest(BaseModel):
+    query_string: str

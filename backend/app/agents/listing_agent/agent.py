@@ -560,7 +560,6 @@ class ListingAgentOrchestrator:
     def __init__(self):
         self.listing_agent = listing_agent
         self.config = ListingAgentConfig()
-        self.product_service = ProductService()
         self.session = None
     
     def initialize_session(self):
@@ -587,29 +586,12 @@ class ListingAgentOrchestrator:
             if isinstance(result, dict) and result.get("status") == "error":
                 return result
 
-            # Save the product to the database
-            try:
-                product_db = self.product_service.create_product(result)
-                database_id = product_db.id
-                logger.info(f"Product saved to database with ID: {database_id}")
+            return {
+                "status": "success",
+                "product": result.model_dump(),
+                "message": "Product created and saved to database successfully"
+            }
                 
-                # Return success response with database info
-                return {
-                    "status": "success",
-                    "product": result.model_dump(),
-                    "database_id": database_id,
-                    "message": "Product created and saved to database successfully"
-                }
-                
-            except Exception as db_error:
-                logger.error(f"Error saving to database: {db_error}")
-                # Return the listing result but with a database warning
-                return {
-                    "status": "success",
-                    "product": result.model_dump(),
-                    "database_warning": f"Product created but not saved to database: {str(db_error)}"
-                }
-
         except Exception as e:
             logger.error(f"Error processing listing request: {e}")
             return {

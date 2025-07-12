@@ -7,7 +7,6 @@ from sqlalchemy.sql import func
 from datetime import datetime
 from ..database import Base
 
-
 class ProductDB(Base):
     """
     SQLAlchemy model for Product table.
@@ -20,6 +19,7 @@ class ProductDB(Base):
     condition = Column(String(50), nullable=False)
     category = Column(String(100), nullable=False, index=True)
     suggested_price = Column(Float, nullable=True)
+    current_bid = Column(Float, nullable=True)  # Current highest bid amount
     tags = Column(JSON, default=list)  # Store tags as JSON array
     brand = Column(String(100), nullable=True, index=True)
     model = Column(String(100), nullable=True)

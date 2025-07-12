@@ -2,12 +2,10 @@
 Utility functions to convert between Pydantic models and SQLAlchemy models.
 """
 from typing import List
-from .product import Product
-from .bid import Bid
+from ..agent_models import Product, Bid
 from ..db_models import ProductDB, BidDB
 from ...enums.enums import BidStatus
 from datetime import datetime
-
 
 def product_db_to_pydantic(product_db: ProductDB) -> Product:
     """
@@ -19,6 +17,7 @@ def product_db_to_pydantic(product_db: ProductDB) -> Product:
         condition=product_db.condition,
         category=product_db.category,
         suggested_price=product_db.suggested_price,
+        current_bid=product_db.current_bid,
         tags=product_db.tags or [],
         brand=product_db.brand,
         model=product_db.model,
@@ -37,6 +36,7 @@ def product_pydantic_to_db(product: Product) -> ProductDB:
         condition=product.condition,
         category=product.category,
         suggested_price=product.suggested_price,
+        current_bid=product.current_bid,
         tags=product.tags,
         brand=product.brand,
         model=product.model,
