@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState , useEffect} from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -19,7 +19,15 @@ const Chat = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  // mic listening state
+  const [isListening, setIsListening] = useState(false);
   const navigate = useNavigate();
+
+  // 
+  
+  useEffect(() => {
+    console.log('Listening state changed:', isListening);
+  }, [isListening]);
 
   const handleSendMessage = async () => {
     if (!inputText.trim()) return;
@@ -65,6 +73,7 @@ const Chat = () => {
 
   if (mode === 'selection') {
     return (
+    
       <div className="min-h-screen bg-background flex flex-col">
         {/* Header */}
         <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -145,7 +154,9 @@ const Chat = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen  bg-background flex flex-col">
+    
+
       {/* Header */}
       <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center">
@@ -168,9 +179,20 @@ const Chat = () => {
           </Badge>
         </div>
       </nav>
+    
 
       {/* Chat Messages */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className={`flex-1 overflow-auto-y ${isListening?'mic-active':''}`}>
+                      {/* mic listening custom animated ui */}
+      
+      {isListening && (
+      <div className="listening-overlay fixed  mt-5 mt-20 h-[100%] w-full flex items-center justify-center z-50">
+         <div className="listening-circle">
+      <Mic className="h-12 w-12 text-white" onClick={()=>setIsListening(l=>!l)} />
+    </div>
+  </div>
+    )}
+
         <div className="max-w-3xl mx-auto space-y-4">
           {messages.length === 0 && (
             <div className="text-center space-y-4 py-12">
@@ -181,7 +203,9 @@ const Chat = () => {
                   <Camera className="w-8 h-8 text-white" />
                 )}
               </div>
+    
               <div>
+                
                 <h2 className="text-xl font-semibold mb-2">
                   {mode === 'buyer' ? 'Find Your Perfect Product' : 'Create Your Listing'}
                 </h2>
@@ -236,12 +260,14 @@ const Chat = () => {
               </Button>
             )}
             {mode === 'buyer' && (
-              <Button variant="outline" size="icon">
+              <Button variant="outline" size="icon" onClick={()=>setIsListening(l=>!l)}>
                 <Mic className="h-4 w-4" />
+                
               </Button>
             )}
             <Input
               value={inputText}
+              onFocus={()=>setIsListening(false)}
               onChange={(e) => setInputText(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder={
