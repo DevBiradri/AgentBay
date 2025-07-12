@@ -6,6 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { Camera, Search, MessageCircle, Upload, Shield, Sparkles, Mic, ArrowLeft, Bot } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import SpeechRecognition, { useSpeechRecognition } from "react-speech-recognition";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+
+
 type Mode = 'selection' | 'buyer' | 'seller';
 type ChatMessage = {
   id: string;
@@ -116,13 +119,16 @@ const {
               Back
             </Button>
             <div className="flex items-center space-x-3">
-              <div className="relative">
-                <Bot className="h-8 w-8 text-primary animate-pulse" />
+              <div className="relative ">
+                <Bot className="h-8 w-8 text-primary animate-pulse dark:text-primary" />
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full animate-ping"></div>
               </div>
               <span className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                 AI Assistant
               </span>
+            </div>
+            <div className="ml-auto">
+              <ThemeToggle />
             </div>
           </div>
         </nav>
@@ -240,6 +246,7 @@ const {
               <Bot className="w-3 h-3 mr-1" />
               {mode === 'buyer' ? 'AI Shopping Assistant' : 'AI Listing Helper'}
             </Badge>
+            <ThemeToggle />
           </div>
         </div>
       </nav>

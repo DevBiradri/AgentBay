@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { ThemeToggle } from "../ui/theme-toggle";
 
 const Navigation = () => {
   const navigate = useNavigate();
@@ -17,6 +18,7 @@ const Navigation = () => {
         <div className="ml-auto flex items-center space-x-4">
           <Button variant="ghost" onClick={()=> navigate('/signin')}>Sign In</Button>
           <Button variant="hero" onClick={() => navigate('/chat')}>Get Started</Button>
+          <ThemeToggle />
         </div>
       </div>
     </nav>
