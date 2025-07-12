@@ -18,6 +18,7 @@ const Index = () => {
       <Navigation />
       <HeroSection />
       <FeaturesSection />
+      {/* temporary added for preview */}
       <FeaturedProducts  products={products}/>
       {/* product form */}
 
@@ -29,6 +30,7 @@ const Index = () => {
           <ProductForm onSubmit={handleProductSubmit} />
         </div>
       </section>
+      {/* temporary added for preview */}
       <HowItWorksSection />
       <CTASection />
       <Footer />
