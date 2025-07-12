@@ -324,53 +324,50 @@ const {
         </div>
       </div>
 
-      {/* Input Area */}
-      <div className="relative z-10 border-t border-border/20 bg-background/80 backdrop-blur-xl p-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-end space-x-4">
-            {mode === 'seller' && (
-              <Button 
-                variant="outline" 
-                size="icon" 
-                className="mb-2 border-border/30 bg-background/50 backdrop-blur hover:bg-primary/10 hover:border-primary/30"
-              >
-                <Upload className="h-4 w-4" />
-              </Button>
-            )}
-            {mode === 'buyer' && (
-              <Button 
-              onClick={toggleMic}
-                variant="outline" 
-                size="icon" 
-                className="mb-2 border-border/30 bg-background/50 backdrop-blur hover:bg-secondary/10 hover:border-secondary/30"
-              >
-                <Mic className="h-4 w-4"  />
-              </Button>
-            )}
-            <div className="flex-1 relative">
-              <Input
-                onFocus={()=>setIsListening(false)}
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder={
-                  mode === 'buyer'
-                    ? "Ask me to find products... (e.g., 'vintage sneakers under $100')"
-                    : "Describe your item or upload photos..."
-                }
-                className="pr-16 h-12 bg-background/50 backdrop-blur border-border/30 focus:border-primary/50 focus:bg-background/70 rounded-xl"
-              />
-              <Button 
-                onClick={handleSendMessage} 
-                disabled={!inputText.trim() || isLoading}
-                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 px-4 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg"
-              >
-                Send
-              </Button>
-            </div>
-          </div>
+      {/* Input Area - Only for Buyer */}
+{mode === 'buyer' && (
+  <div className="relative z-10 border-t border-border/20 bg-background/80 backdrop-blur-xl p-6">
+    <div className="max-w-4xl mx-auto">
+      <div className="flex items-end space-x-4">
+        <Button 
+          onClick={toggleMic}
+          variant="outline" 
+          size="icon" 
+          className="mb-2 border-border/30 bg-background/50 backdrop-blur hover:bg-secondary/10 hover:border-secondary/30"
+        >
+          <Mic className="h-4 w-4" />
+        </Button>
+        
+        <div className="flex-1 relative">
+          <Input
+            onFocus={() => setIsListening(false)}
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Ask me to find products... (e.g., 'vintage sneakers under $100')"
+            className="pr-16 h-12 bg-background/50 backdrop-blur border-border/30 focus:border-primary/50 focus:bg-background/70 rounded-xl"
+          />
+          <Button 
+            onClick={handleSendMessage} 
+            disabled={!inputText.trim() || isLoading}
+            className="absolute right-2 top-1/2 -translate-y-1/2 h-8 px-4 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg"
+          >
+            Send
+          </Button>
         </div>
       </div>
+    </div>
+  </div>
+)}
+
+{/* Future Form Area - For Seller */}
+{mode === 'seller' && (
+  <div className="p-6 max-w-4xl mx-auto">
+    {/* Placeholder for seller form (you can insert form here later) */}
+  </div>
+)}
+
+
     </div>
   );
 };
