@@ -7,7 +7,7 @@ import { Camera, Search, MessageCircle, Upload, Shield, Sparkles, Mic, ArrowLeft
 import { useNavigate } from "react-router-dom";
 import SpeechRecognition, { useSpeechRecognition } from "react-speech-recognition";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-
+import ProductForm, {ProductData} from "@/components/landing/ProductForm";
 
 type Mode = 'selection' | 'buyer' | 'seller';
 type ChatMessage = {
@@ -59,7 +59,13 @@ const {
       setIsListening(true);
     }
   };
-//   =============================================
+//   ============================================= //Product form submition here
+const handleProductSubmit = (data: ProductData) => {
+  console.log('Product form submitted:', data);
+  // TODO: send data to your backend or AI generation endpoint
+};
+
+// ===============================================
 
   const handleSendMessage = async () => {
     if (!inputText.trim()) return;
@@ -322,6 +328,21 @@ const {
             </div>
           )}
         </div>
+        {/* Future Form Area - For Seller */}
+{mode === 'seller' && (
+    <div className="p-6 max-w-4xl mx-auto">
+
+    <section className="py-16  ">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl font-bold text-foreground mb-6">
+            Add Your Own Product
+          </h2>
+          <ProductForm onSubmit={handleProductSubmit} />
+        </div>
+      </section>
+  </div>
+
+)}
       </div>
 
       {/* Input Area - Only for Buyer */}
@@ -360,12 +381,7 @@ const {
   </div>
 )}
 
-{/* Future Form Area - For Seller */}
-{mode === 'seller' && (
-  <div className="p-6 max-w-4xl mx-auto">
-    {/* Placeholder for seller form (you can insert form here later) */}
-  </div>
-)}
+
 
 
     </div>
