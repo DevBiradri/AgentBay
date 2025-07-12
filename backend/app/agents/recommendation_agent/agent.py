@@ -241,17 +241,17 @@ class ProductDatabase:
         """Get a specific product by ID"""
         return self.products.get(product_id)
     
-    def search_products(self, query: str = "", category: str = "", max_price: float = None) -> List[AuctionProduct]:
+    def search_products(self, query: Optional[str] = "", category: str = "", max_price: float = None) -> List[AuctionProduct]:
         """Search products based on criteria"""
         results = []
-        query_lower = query.lower()
-        
+        query_lower = query.lower() if isinstance(query, str) else ""
+
         for product in self.products.values():
             if product.auction_status != AuctionStatus.ACTIVE:
                 continue
-                
+
             matches = True
-            
+
             # Text search
             if query_lower:
                 text_match = (
@@ -263,25 +263,25 @@ class ProductDatabase:
                 )
                 if not text_match:
                     matches = False
-            
+
             # Category filter
             if category and product.category.lower() != category.lower():
                 matches = False
-            
+
             # Price filter
             if max_price and product.current_bid > max_price:
                 matches = False
-            
+
             if matches:
                 results.append(product)
-        
+
         # Sort by relevance (ending soon first, then by current bid)
         results.sort(key=lambda x: (x.auction_end_time, -x.current_bid))
         return results
 
 class BidDatabase:
     """Handles bid database operations"""
-    
+
     def __init__(self, db_path: str):
         self.db_path = db_path
         self.bids = {}
@@ -808,42 +808,183 @@ class RecommendationAgentOrchestrator:
             logger.error(f"Error initializing session: {e}")
             return None
     
-    async def process_recommendation_request(self, user_id: str, user_preferences: dict, user_history: List[str] = None):
+    async def process_recommendation_request(self, query_string: str):
         """
-        Process a recommendation request for a user
+        Process a recommendation request based on a natural language query string.
         """
         try:
             if not self.session:
                 self.initialize_session()
             
-            # Get personalized recommendations
-            recommendations = get_personalized_recommendations(user_preferences, user_history)
+            # Load products from products.json
+            products_file_path = "products.json"
+            with open(products_file_path, "r", encoding="utf-8") as f:
+                products_data = json.load(f)
             
-            # Add real-time auction status updates
-            if recommendations["status"] == "success":
-                for rec in recommendations["recommendations"]:
-                    product_id = rec["product"]["product_id"]
-                    current_product = self.product_db.get_product(product_id)
-                    if current_product:
-                        # Update with latest auction data
-                        rec["product"]["current_bid"] = current_product.current_bid
-                        rec["product"]["bid_count"] = current_product.bid_count
-                        rec["product"]["auction_status"] = current_product.auction_status.value
-                        
-                        # Add time remaining
-                        time_left = current_product.auction_end_time - datetime.now()
-                        rec["time_left_hours"] = max(0, int(time_left.total_seconds() / 3600))
-                        rec["time_left_formatted"] = format_time_left(time_left)
-                        rec["urgency_level"] = self._calculate_urgency(time_left, current_product.bid_count)
+            # Extract active products
+            available_products = [
+                product for product in products_data.values()
+                if product["auction_status"] == "active"
+            ]
+
+            print(available_products)
             
-            return recommendations
+            # Use Gemini to interpret the query string
+            model = genai.GenerativeModel('gemini-2.0-flash')
+            prompt = f"""
+            You are an AI assistant. Interpret the following user query and extract relevant information for product recommendations:
             
+            Query: "{query_string}"
+            
+            Available Products:
+            {json.dumps(available_products, indent=2)}
+            
+            Return a JSON object with the following structure:
+            {{
+                "categories": ["category1", "category2"],
+                "preferred_brands": ["brand1", "brand2"],
+                "max_budget": 1000,
+                "keywords": ["keyword1", "keyword2"]
+            }}
+            """
+            response = model.generate_content(prompt)
+            response_text = response.text.strip()
+            
+            # Extract JSON from the response
+            if "```json" in response_text:
+                json_start = response_text.find("```json") + 7
+                json_end = response_text.find("```", json_start)
+                json_text = response_text[json_start:json_end].strip()
+            else:
+                json_text = response_text
+            
+            query_params = json.loads(json_text)
+            
+            # Filter products based on extracted parameters
+            filtered_products = []
+            for product in available_products:
+                matches = True
+                
+                # Filter by category
+                if query_params.get("categories"):
+                    matches &= product["category"].lower() in [c.lower() for c in query_params["categories"]]
+                
+                # Filter by brand
+                if query_params.get("preferred_brands"):
+                    matches &= product["brand"].lower() in [b.lower() for b in query_params["preferred_brands"]]
+                
+                # Filter by max budget
+                if query_params.get("max_budget"):
+                    matches &= product["current_bid"] <= query_params["max_budget"]
+                
+                # Filter by keywords
+                if query_params.get("keywords"):
+                    matches &= any(
+                        keyword.lower() in product["title"].lower() or
+                        keyword.lower() in product["description"].lower() or
+                        keyword.lower() in " ".join(product["tags"]).lower()
+                        for keyword in query_params["keywords"]
+                    )
+                
+                if matches:
+                    filtered_products.append(product)
+            
+            # Format the results
+            formatted_results = []
+            for product in filtered_products:
+                time_left = datetime.fromisoformat(product["auction_end_time"]) - datetime.now()
+                formatted_results.append({
+                    "product": product,
+                    "time_left_hours": max(0, int(time_left.total_seconds() / 3600)),
+                    "time_left_formatted": format_time_left(time_left)
+                })
+            
+            return {
+                "status": "success",
+                "results": formatted_results,
+                "query_params": query_params,
+                "total_found": len(formatted_results)
+            }
+        
         except Exception as e:
             logger.error(f"Error processing recommendation request: {e}")
             return {
                 "status": "error",
                 "error_message": str(e)
             }
+        try:
+            if not self.session:
+                self.initialize_session()
+            
+            # Load all available products
+            available_products = [
+                product.to_dict() for product in self.product_db.products.values()
+                if product.auction_status == AuctionStatus.ACTIVE
+            ]
+            
+            print(available_products)
+            # Use Gemini to interpret the query string
+            model = genai.GenerativeModel('gemini-2.0-flash')
+            prompt = f"""
+            You are an AI assistant. Interpret the following user query and extract relevant information for product recommendations:
+            
+            Query: "{query_string}"
+            
+            Available Products:
+            {json.dumps(available_products, indent=2)}
+            
+            Return a JSON object with the following structure:
+            {{
+                "categories": ["category1", "category2"],
+                "preferred_brands": ["brand1", "brand2"],
+                "max_budget": 1000,
+                "keywords": ["keyword1", "keyword2"]
+            }}
+            """
+            response = model.generate_content(prompt)
+            response_text = response.text.strip()
+            
+            # Extract JSON from the response
+            if "```json" in response_text:
+                json_start = response_text.find("```json") + 7
+                json_end = response_text.find("```", json_start)
+                json_text = response_text[json_start:json_end].strip()
+            else:
+                json_text = response_text
+            
+            query_params = json.loads(json_text)
+            
+            # Search the product database using the extracted parameters
+            results = self.product_db.search_products(
+                query=query_params.get("keywords", ""),
+                category=query_params.get("categories", ""),
+                max_price=query_params.get("max_budget", 0)
+            )
+            
+            # Format the results
+            formatted_results = []
+            for product in results:
+                time_left = product.auction_end_time - datetime.now()
+                formatted_results.append({
+                    "product": product.to_dict(),
+                    "time_left_hours": max(0, int(time_left.total_seconds() / 3600)),
+                    "time_left_formatted": format_time_left(time_left)
+                })
+            
+            return {
+                "status": "success",
+                "results": formatted_results,
+                "query_params": query_params,
+                "total_found": len(formatted_results)
+            }
+        
+        except Exception as e:
+            logger.error(f"Error processing recommendation request: {e}")
+            return {
+                "status": "error",
+                "error_message": str(e)
+            }
+
     
     async def process_bid_request(self, user_id: str, product_id: str, bid_amount: float, auto_bid_max: Optional[float] = None):
         """
