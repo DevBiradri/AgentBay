@@ -186,7 +186,7 @@ const Chat = () => {
                       {/* mic listening custom animated ui */}
       
       {isListening && (
-      <div className="listening-overlay fixed  mt-5 mt-20 h-[100%] w-full flex items-center justify-center z-50">
+      <div className="listening-overlay fixed  mt-20 h-[90%] w-full  flex items-center justify-center z-50">
          <div className="listening-circle">
       <Mic className="h-12 w-12 text-white" onClick={()=>setIsListening(l=>!l)} />
     </div>
