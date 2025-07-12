@@ -15,9 +15,10 @@ import google.generativeai as genai
 from google.adk.agents import Agent
 from google.adk.sessions import Session
 
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 
 load_dotenv()
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -25,6 +26,7 @@ logger = logging.getLogger(__name__)
 
 # Configure Gemini API
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+print(os.getenv("GOOGLE_API_KEY"))
 
 class ProductCondition(Enum):
     NEW = "new"
@@ -108,6 +110,7 @@ def analyze_product_image(image_path: str) -> dict:
             return {"status": "error", "error_message": f"Invalid image file: {str(img_error)}"}
         
         # Initialize Gemini model
+        genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
         model = genai.GenerativeModel('gemini-2.0-flash')
         
         # Load and prepare the image
@@ -598,18 +601,23 @@ class ListingAgentOrchestrator:
         Process a complete listing request using the orchestrated agent system
         """
         try:
-            if not self.session:
-                self.initialize_session()
-            
+            if not isinstance(self.session, Session):
+                self.session = self.initialize_session()
+
             # Create the listing using the main tool
             result = create_complete_listing(image_path, user_preferences)
-            
-            if result["status"] == "success":
-                # Communicate with other agents
-                await self.notify_other_agents(result["listing"])
-                
-            return result
-            
+
+            # If result is a dict with 'status' == 'error', return as is
+            if isinstance(result, dict) and result.get("status") == "error":
+                return result
+
+            # Otherwise, wrap in a success response
+            logger.info("Listing created successfully")
+            return {
+                "status": "success",
+                "listing": result
+            }
+
         except Exception as e:
             logger.error(f"Error processing listing request: {e}")
             return {
