@@ -1,0 +1,95 @@
+{
+  "p001": {
+    "product_id": "p001",
+    "title": "iPhone 14 Pro Max 256GB Space Black",
+    "description": "Excellent condition iPhone 14 Pro Max with original box and accessories. Minor scratches on back but screen is perfect.",
+    "condition": "excellent",
+    "category": "Electronics",
+    "brand": "Apple",
+    "model": "iPhone 14 Pro Max",
+    "tags": [
+      "smartphone",
+      "apple",
+      "256gb",
+      "space black"
+    ],
+    "starting_price": 500.0,
+    "current_bid": 750.0,
+    "buy_now_price": 950.0,
+    "reserve_price": 700.0,
+    "auction_end_time": "2025-07-15T19:51:26.536759",
+    "auction_status": "active",
+    "bid_count": 12,
+    "watchers": 25,
+    "seller_id": "seller_001",
+    "image_urls": [
+      "https://example.com/iphone1.jpg"
+    ],
+    "shipping_cost": 15.0,
+    "location": "New York, NY",
+    "created_at": "2025-07-10T19:51:26.536759",
+    "updated_at": "2025-07-12T19:51:26.536759"
+  },
+  "p002": {
+    "product_id": "p002",
+    "title": "Vintage Rolex Submariner 1980s",
+    "description": "Authentic vintage Rolex Submariner from the 1980s. Serviced recently. Some patina on dial adds character.",
+    "condition": "good",
+    "category": "Watches",
+    "brand": "Rolex",
+    "model": "Submariner",
+    "tags": [
+      "luxury",
+      "vintage",
+      "diving",
+      "automatic"
+    ],
+    "starting_price": 2000.0,
+    "current_bid": 3500.0,
+    "buy_now_price": 4500.0,
+    "reserve_price": 3000.0,
+    "auction_end_time": "2025-07-17T19:51:26.536759",
+    "auction_status": "active",
+    "bid_count": 8,
+    "watchers": 45,
+    "seller_id": "seller_002",
+    "image_urls": [
+      "https://example.com/rolex1.jpg"
+    ],
+    "shipping_cost": 25.0,
+    "location": "Los Angeles, CA",
+    "created_at": "2025-07-08T19:51:26.536759",
+    "updated_at": "2025-07-12T19:51:26.536759"
+  },
+  "p003": {
+    "product_id": "p003",
+    "title": "MacBook Pro 16-inch M2 Pro 512GB",
+    "description": "Like new MacBook Pro with M2 Pro chip. Barely used, perfect for professionals. Includes original charger.",
+    "condition": "like_new",
+    "category": "Electronics",
+    "brand": "Apple",
+    "model": "MacBook Pro 16-inch",
+    "tags": [
+      "laptop",
+      "apple",
+      "m2 pro",
+      "512gb"
+    ],
+    "starting_price": 1200.0,
+    "current_bid": 1650.0,
+    "buy_now_price": 2100.0,
+    "reserve_price": 1500.0,
+    "auction_end_time": "2025-07-13T19:51:26.536759",
+    "auction_status": "active",
+    "bid_count": 15,
+    "watchers": 38,
+    "seller_id": "seller_003",
+    "image_urls": [
+      "https://example.com/macbook1.jpg"
+    ],
+    "shipping_cost": 20.0,
+    "location": "Chicago, IL",
+    "created_at": "2025-07-06T19:51:26.536759",
+    "updated_at": "2025-07-12T19:51:26.536759"
+  }
+}

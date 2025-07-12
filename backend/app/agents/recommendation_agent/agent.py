@@ -326,7 +326,7 @@ class BidDatabase:
         """Get all bids for a specific user"""
         return [bid for bid in self.bids.values() if bid.user_id == user_id]
 
-def get_personalized_recommendations(user_preferences: dict, user_history: List[str] = None) -> dict:
+def get_personalized_recommendations(user_preferences: dict, user_history: Optional[List[str]] = None) -> dict:
     """
     Generate personalized product recommendations using Gemini API
     """
@@ -463,7 +463,7 @@ def get_personalized_recommendations(user_preferences: dict, user_history: List[
             "error_message": str(e)
         }
 
-def search_products_by_query(query: str, filters: dict = None) -> dict:
+def search_products_by_query(query: str, filters: Optional[dict] = None) -> dict:
     """
     Search for products based on natural language query
     """
@@ -751,7 +751,7 @@ def sync_with_listing_agent(listing_data: dict) -> dict:
         }
 
 # Create the recommendation agent
-recommendation_agent = Agent(
+root_agent = recommendation_agent = Agent(
     name="recommendation_agent",
     model="gemini-2.0-flash",
     description="AI-powered recommendation agent for auction marketplace with bidding capabilities",
