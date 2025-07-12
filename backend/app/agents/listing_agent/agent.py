@@ -14,9 +14,11 @@ import google.generativeai as genai
 # Google ADK imports
 from google.adk.agents import Agent
 from google.adk.sessions import Session
-
+from ...models.agent_models import Product
+from ...services.product_service import ProductService
+ 
 from dotenv import load_dotenv, find_dotenv
-
+ 
 load_dotenv()
 
 
@@ -36,33 +38,6 @@ class ProductCondition(Enum):
     FAIR = "fair"
     POOR = "poor"
     FOR_PARTS = "for_parts"
-
-@dataclass
-class ProductListing:
-    title: str
-    description: str
-    condition: ProductCondition
-    category: str
-    suggested_price: Optional[float] = None
-    price_range: Optional[Tuple[float, float]] = None
-    shipping_info: Optional[Dict[str, Any]] = None
-    tags: List[str] = None
-    dimensions: Optional[Dict[str, str]] = None
-    weight_estimate: Optional[str] = None
-    brand: Optional[str] = None
-    model: Optional[str] = None
-    confidence_score: float = 0.0
-    
-    def __post_init__(self):
-        if self.tags is None:
-            self.tags = []
-    
-    def to_dict(self):
-        d = asdict(self)
-        # Convert ProductCondition enum to its value for JSON serialization
-        if isinstance(d.get('condition'), ProductCondition):
-            d['condition'] = d['condition'].value
-        return d
 
 class ListingAgentConfig:
     """Configuration for the listing agent"""
@@ -525,19 +500,19 @@ def create_complete_listing(image_path: str, user_preferences: Optional[dict] = 
         logger.info("Pricing suggested successfully")
         
         # Step 6: Create a clean, non-redundant JSON for auction listing (no price_range, no shipping_info)
-        product_json = {
-            "title": title_result["title"].strip(),
-            "description": desc_result["description"].strip(),
-            "condition": condition_result["condition"],
-            "category": analysis.get("category_suggestions", ["General"])[0],
-            "suggested_price": pricing_result["pricing"].get("suggested_starting_price"),
-            "tags": [tag for tag in analysis.get("key_features", []) if tag],
-            "brand": analysis.get("brand"),
-            "model": analysis.get("model"),
-            "confidence_score": analysis.get("confidence_score", 0.7)
-        }
+        product = Product(
+            title=title_result["title"].strip(),
+            description=desc_result["description"].strip(),
+            condition=condition_result["condition"],
+            category=analysis.get("category_suggestions", ["General"])[0],
+            suggested_price=pricing_result["pricing"].get("suggested_starting_price"),
+            tags=[tag for tag in analysis.get("key_features", []) if tag],
+            brand=analysis.get("brand"),
+            model=analysis.get("model"),
+            confidence_score=analysis.get("confidence_score", 0.7)
+        )
         logger.info("Complete listing created successfully")
-        return product_json
+        return product
         
     except Exception as e:
         logger.error(f"Error creating complete listing: {e}")
@@ -585,6 +560,7 @@ class ListingAgentOrchestrator:
     def __init__(self):
         self.listing_agent = listing_agent
         self.config = ListingAgentConfig()
+        self.product_service = ProductService()
         self.session = None
     
     def initialize_session(self):
@@ -611,12 +587,28 @@ class ListingAgentOrchestrator:
             if isinstance(result, dict) and result.get("status") == "error":
                 return result
 
-            # Otherwise, wrap in a success response
-            logger.info("Listing created successfully")
-            return {
-                "status": "success",
-                "listing": result
-            }
+            # Save the product to the database
+            try:
+                product_db = self.product_service.create_product(result)
+                database_id = product_db.id
+                logger.info(f"Product saved to database with ID: {database_id}")
+                
+                # Return success response with database info
+                return {
+                    "status": "success",
+                    "product": result.model_dump(),
+                    "database_id": database_id,
+                    "message": "Product created and saved to database successfully"
+                }
+                
+            except Exception as db_error:
+                logger.error(f"Error saving to database: {db_error}")
+                # Return the listing result but with a database warning
+                return {
+                    "status": "success",
+                    "product": result.model_dump(),
+                    "database_warning": f"Product created but not saved to database: {str(db_error)}"
+                }
 
         except Exception as e:
             logger.error(f"Error processing listing request: {e}")

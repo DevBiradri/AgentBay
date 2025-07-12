@@ -1,20 +1,24 @@
 import json
 import logging
-from typing import Dict, List, Optional, Any, Tuple
-from dataclasses import dataclass, asdict
-from enum import Enum
+from typing import List, Optional
 import os
 from datetime import datetime, timedelta
 import asyncio
 import uuid
+from ...enums.enums import AuctionStatus, BidStatus, ProductCondition
+from ...models.bid import Bid
+from ...services.product_service import ProductService
+from ...services.bid_service import BidService
+from ...models.converters.converters import product_db_to_pydantic, bid_db_to_pydantic
 import google.generativeai as genai
 
 # Google ADK imports
 from google.adk.agents import Agent
 from google.adk.sessions import Session
-
+from ...models.product import Product
+ 
 from dotenv import load_dotenv
-
+ 
 load_dotenv()
 
 # Configure logging
@@ -24,307 +28,14 @@ logger = logging.getLogger(__name__)
 # Configure Gemini API
 genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
-# Import shared enums from listing agent
-class ProductCondition(Enum):
-    NEW = "new"
-    LIKE_NEW = "like_new"
-    EXCELLENT = "excellent"
-    GOOD = "good"
-    FAIR = "fair"
-    POOR = "poor"
-    FOR_PARTS = "for_parts"
-
-class AuctionStatus(Enum):
-    ACTIVE = "active"
-    ENDED = "ended"
-    CANCELLED = "cancelled"
-    SOLD = "sold"
-
-class BidStatus(Enum):
-    ACTIVE = "active"
-    WINNING = "winning"
-    OUTBID = "outbid"
-    WON = "won"
-    LOST = "lost"
-
-@dataclass
-class Bid:
-    bid_id: str
-    user_id: str
-    product_id: str
-    amount: float
-    timestamp: datetime
-    status: BidStatus
-    is_auto_bid: bool = False
-    max_auto_bid: Optional[float] = None
-    
-    def to_dict(self):
-        d = asdict(self)
-        d['timestamp'] = self.timestamp.isoformat()
-        d['status'] = self.status.value
-        return d
-
-@dataclass
-class AuctionProduct:
-    product_id: str
-    title: str
-    description: str
-    condition: ProductCondition
-    category: str
-    brand: Optional[str]
-    model: Optional[str]
-    tags: List[str]
-    starting_price: float
-    current_bid: float
-    buy_now_price: Optional[float]
-    reserve_price: Optional[float]
-    auction_end_time: datetime
-    auction_status: AuctionStatus
-    bid_count: int
-    watchers: int
-    seller_id: str
-    image_urls: List[str]
-    shipping_cost: float
-    location: str
-    created_at: datetime
-    updated_at: datetime
-    
-    def __post_init__(self):
-        if self.tags is None:
-            self.tags = []
-        if self.image_urls is None:
-            self.image_urls = []
-    
-    def to_dict(self):
-        d = asdict(self)
-        d['condition'] = self.condition.value
-        d['auction_status'] = self.auction_status.value
-        d['auction_end_time'] = self.auction_end_time.isoformat()
-        d['created_at'] = self.created_at.isoformat()
-        d['updated_at'] = self.updated_at.isoformat()
-        return d
-
 class RecommendationAgentConfig:
     """Configuration for the recommendation agent"""
     def __init__(self):
         self.gemini_api_key = os.getenv("GOOGLE_API_KEY")
-        self.products_db_path = os.getenv("PRODUCTS_DB_PATH", "backend/data/products.json")
-        self.bids_db_path = os.getenv("BIDS_DB_PATH", "backend/data/bids.json")
+        self.product_service = ProductService()
+        self.bid_service = BidService()
         if not self.gemini_api_key:
             raise ValueError("GOOGLE_API_KEY environment variable is required")
-
-class ProductDatabase:
-    """Handles product database operations"""
-    
-    def __init__(self, db_path: str):
-        self.db_path = db_path
-        self.products = {}
-        self.load_products()
-    
-    def load_products(self):
-        """Load products from JSON file"""
-        try:
-            if os.path.exists(self.db_path):
-                with open(self.db_path, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                    self.products = {pid: AuctionProduct(**prod) for pid, prod in data.items()}
-                logger.info(f"Loaded {len(self.products)} products from database")
-            else:
-                self.products = {}
-                # Create sample data
-                self.create_sample_data()
-                logger.info("Created sample product database")
-        except Exception as e:
-            logger.error(f"Error loading products: {e}")
-            self.products = {}
-    
-    def save_products(self):
-        """Save products to JSON file"""
-        try:
-            os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
-            with open(self.db_path, 'w', encoding='utf-8') as f:
-                serializable_data = {pid: prod.to_dict() for pid, prod in self.products.items()}
-                json.dump(serializable_data, f, indent=2, ensure_ascii=False)
-            logger.info(f"Saved {len(self.products)} products to database")
-        except Exception as e:
-            logger.error(f"Error saving products: {e}")
-    
-    def create_sample_data(self):
-        """Create sample auction products"""
-        sample_products = [
-            {
-                "product_id": "p001",
-                "title": "iPhone 14 Pro Max 256GB Space Black",
-                "description": "Excellent condition iPhone 14 Pro Max with original box and accessories. Minor scratches on back but screen is perfect.",
-                "condition": ProductCondition.EXCELLENT,
-                "category": "Electronics",
-                "brand": "Apple",
-                "model": "iPhone 14 Pro Max",
-                "tags": ["smartphone", "apple", "256gb", "space black"],
-                "starting_price": 500.0,
-                "current_bid": 750.0,
-                "buy_now_price": 950.0,
-                "reserve_price": 700.0,
-                "auction_end_time": datetime.now() + timedelta(days=3),
-                "auction_status": AuctionStatus.ACTIVE,
-                "bid_count": 12,
-                "watchers": 25,
-                "seller_id": "seller_001",
-                "image_urls": ["https://example.com/iphone1.jpg"],
-                "shipping_cost": 15.0,
-                "location": "New York, NY",
-                "created_at": datetime.now() - timedelta(days=2),
-                "updated_at": datetime.now()
-            },
-            {
-                "product_id": "p002",
-                "title": "Vintage Rolex Submariner 1980s",
-                "description": "Authentic vintage Rolex Submariner from the 1980s. Serviced recently. Some patina on dial adds character.",
-                "condition": ProductCondition.GOOD,
-                "category": "Watches",
-                "brand": "Rolex",
-                "model": "Submariner",
-                "tags": ["luxury", "vintage", "diving", "automatic"],
-                "starting_price": 2000.0,
-                "current_bid": 3500.0,
-                "buy_now_price": 4500.0,
-                "reserve_price": 3000.0,
-                "auction_end_time": datetime.now() + timedelta(days=5),
-                "auction_status": AuctionStatus.ACTIVE,
-                "bid_count": 8,
-                "watchers": 45,
-                "seller_id": "seller_002",
-                "image_urls": ["https://example.com/rolex1.jpg"],
-                "shipping_cost": 25.0,
-                "location": "Los Angeles, CA",
-                "created_at": datetime.now() - timedelta(days=4),
-                "updated_at": datetime.now()
-            },
-            {
-                "product_id": "p003",
-                "title": "MacBook Pro 16-inch M2 Pro 512GB",
-                "description": "Like new MacBook Pro with M2 Pro chip. Barely used, perfect for professionals. Includes original charger.",
-                "condition": ProductCondition.LIKE_NEW,
-                "category": "Electronics",
-                "brand": "Apple",
-                "model": "MacBook Pro 16-inch",
-                "tags": ["laptop", "apple", "m2 pro", "512gb"],
-                "starting_price": 1200.0,
-                "current_bid": 1650.0,
-                "buy_now_price": 2100.0,
-                "reserve_price": 1500.0,
-                "auction_end_time": datetime.now() + timedelta(days=1),
-                "auction_status": AuctionStatus.ACTIVE,
-                "bid_count": 15,
-                "watchers": 38,
-                "seller_id": "seller_003",
-                "image_urls": ["https://example.com/macbook1.jpg"],
-                "shipping_cost": 20.0,
-                "location": "Chicago, IL",
-                "created_at": datetime.now() - timedelta(days=6),
-                "updated_at": datetime.now()
-            }
-        ]
-        
-        for product_data in sample_products:
-            product = AuctionProduct(**product_data)
-            self.products[product.product_id] = product
-        
-        self.save_products()
-    
-    def add_product(self, product: AuctionProduct):
-        """Add a new product to the database"""
-        self.products[product.product_id] = product
-        self.save_products()
-    
-    def get_product(self, product_id: str) -> Optional[AuctionProduct]:
-        """Get a specific product by ID"""
-        return self.products.get(product_id)
-    
-    def search_products(self, query: str = "", category: str = "", max_price: float = None) -> List[AuctionProduct]:
-        """Search products based on criteria"""
-        results = []
-        query_lower = query.lower()
-        
-        for product in self.products.values():
-            if product.auction_status != AuctionStatus.ACTIVE:
-                continue
-                
-            matches = True
-            
-            # Text search
-            if query_lower:
-                text_match = (
-                    query_lower in product.title.lower() or
-                    query_lower in product.description.lower() or
-                    query_lower in (product.brand or "").lower() or
-                    query_lower in (product.model or "").lower() or
-                    any(query_lower in tag.lower() for tag in product.tags)
-                )
-                if not text_match:
-                    matches = False
-            
-            # Category filter
-            if category and product.category.lower() != category.lower():
-                matches = False
-            
-            # Price filter
-            if max_price and product.current_bid > max_price:
-                matches = False
-            
-            if matches:
-                results.append(product)
-        
-        # Sort by relevance (ending soon first, then by current bid)
-        results.sort(key=lambda x: (x.auction_end_time, -x.current_bid))
-        return results
-
-class BidDatabase:
-    """Handles bid database operations"""
-    
-    def __init__(self, db_path: str):
-        self.db_path = db_path
-        self.bids = {}
-        self.load_bids()
-    
-    def load_bids(self):
-        """Load bids from JSON file"""
-        try:
-            if os.path.exists(self.db_path):
-                with open(self.db_path, 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                    self.bids = {bid_id: Bid(**bid) for bid_id, bid in data.items()}
-                logger.info(f"Loaded {len(self.bids)} bids from database")
-            else:
-                self.bids = {}
-                logger.info("Created new bid database")
-        except Exception as e:
-            logger.error(f"Error loading bids: {e}")
-            self.bids = {}
-    
-    def save_bids(self):
-        """Save bids to JSON file"""
-        try:
-            os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
-            with open(self.db_path, 'w', encoding='utf-8') as f:
-                serializable_data = {bid_id: bid.to_dict() for bid_id, bid in self.bids.items()}
-                json.dump(serializable_data, f, indent=2, ensure_ascii=False)
-            logger.info(f"Saved {len(self.bids)} bids to database")
-        except Exception as e:
-            logger.error(f"Error saving bids: {e}")
-    
-    def add_bid(self, bid: Bid):
-        """Add a new bid"""
-        self.bids[bid.bid_id] = bid
-        self.save_bids()
-    
-    def get_bids_for_product(self, product_id: str) -> List[Bid]:
-        """Get all bids for a specific product"""
-        return [bid for bid in self.bids.values() if bid.product_id == product_id]
-    
-    def get_bids_for_user(self, user_id: str) -> List[Bid]:
-        """Get all bids for a specific user"""
-        return [bid for bid in self.bids.values() if bid.user_id == user_id]
 
 def get_personalized_recommendations(user_preferences: dict, user_history: Optional[List[str]] = None) -> dict:
     """
@@ -332,16 +43,16 @@ def get_personalized_recommendations(user_preferences: dict, user_history: Optio
     """
     try:
         config = RecommendationAgentConfig()
-        db = ProductDatabase(config.products_db_path)
         
-        # Get available products
-        available_products = [p for p in db.products.values() if p.auction_status == AuctionStatus.ACTIVE]
+        # Get available products from database
+        available_products_db = config.product_service.get_all_products(limit=100)
+        available_products = [product_db_to_pydantic(p) for p in available_products_db]
         
         if not available_products:
             return {
                 "status": "success",
                 "recommendations": [],
-                "message": "No active auctions available at the moment."
+                "message": "No products available at the moment."
             }
         
         # Initialize Gemini model
@@ -350,18 +61,14 @@ def get_personalized_recommendations(user_preferences: dict, user_history: Optio
         # Prepare context for recommendation
         products_summary = []
         for product in available_products:
-            time_left = product.auction_end_time - datetime.now()
             products_summary.append({
-                "id": product.product_id,
                 "title": product.title,
                 "category": product.category,
                 "brand": product.brand,
-                "current_bid": product.current_bid,
-                "buy_now_price": product.buy_now_price,
-                "condition": product.condition.value,
-                "time_left_hours": max(0, int(time_left.total_seconds() / 3600)),
-                "bid_count": product.bid_count,
-                "tags": product.tags
+                "suggested_price": product.suggested_price,
+                "condition": product.condition,
+                "tags": product.tags,
+                "model": product.model
             })
         
         # Create recommendation prompt
@@ -424,15 +131,16 @@ def get_personalized_recommendations(user_preferences: dict, user_history: Optio
             
             # Enrich recommendations with full product details
             enriched_recommendations = []
-            for rec in recommendations.get("top_recommendations", []):
-                product = db.get_product(rec["product_id"])
-                if product:
+            for i, rec in enumerate(recommendations.get("top_recommendations", [])):
+                # Use index since our products don't have external product_id
+                if i < len(available_products):
+                    product = available_products[i]
                     enriched_rec = {
-                        "product": product.to_dict(),
-                        "relevance_score": rec["relevance_score"],
-                        "reason": rec["reason"],
-                        "urgency": rec["urgency"],
-                        "value_assessment": rec["value_assessment"]
+                        "product": product.model_dump(),
+                        "relevance_score": rec.get("relevance_score", 0.5),
+                        "reason": rec.get("reason", "Matches your preferences"),
+                        "urgency": rec.get("urgency", "medium"),
+                        "value_assessment": rec.get("value_assessment", "fair_price")
                     }
                     enriched_recommendations.append(enriched_rec)
             
@@ -469,7 +177,7 @@ def search_products_by_query(query: str, filters: Optional[dict] = None) -> dict
     """
     try:
         config = RecommendationAgentConfig()
-        db = ProductDatabase(config.products_db_path)
+        db = ProductService(config.products_db_path)
         
         if filters is None:
             filters = {}
@@ -521,11 +229,11 @@ def place_bid(user_id: str, product_id: str, bid_amount: float, auto_bid_max: Op
     """
     try:
         config = RecommendationAgentConfig()
-        product_db = ProductDatabase(config.products_db_path)
-        bid_db = BidDatabase(config.bids_db_path)
+        product_service = ProductService(config.products_db_path)
+        bid_service = BidService(config.bids_db_path)
         
         # Get the product
-        product = product_db.get_product(product_id)
+        product = product_service.get_product(product_id)
         if not product:
             return {
                 "status": "error",
@@ -573,21 +281,21 @@ def place_bid(user_id: str, product_id: str, bid_amount: float, auto_bid_max: Op
         )
         
         # Update previous bids for this product
-        existing_bids = bid_db.get_bids_for_product(product_id)
+        existing_bids = bid_service.get_bids_for_product(product_id)
         for existing_bid in existing_bids:
             if existing_bid.status == BidStatus.WINNING:
                 existing_bid.status = BidStatus.OUTBID
-                bid_db.bids[existing_bid.bid_id] = existing_bid
+                bid_service.bids[existing_bid.bid_id] = existing_bid
         
         # Add the new bid
-        bid_db.add_bid(bid)
+        bid_service.add_bid(bid)
         
         # Update product
         product.current_bid = bid_amount
         product.bid_count += 1
         product.updated_at = datetime.now()
-        product_db.products[product_id] = product
-        product_db.save_products()
+        product_service.products[product_id] = product
+        product_service.save_products()
         
         logger.info(f"Bid placed: ${bid_amount} on {product_id} by {user_id}")
         
@@ -611,9 +319,9 @@ def get_bid_history(product_id: str) -> dict:
     """
     try:
         config = RecommendationAgentConfig()
-        bid_db = BidDatabase(config.bids_db_path)
+        bid_service = BidService(config.bids_db_path)
         
-        bids = bid_db.get_bids_for_product(product_id)
+        bids = bid_service.get_bids_for_product(product_id)
         bids.sort(key=lambda x: x.timestamp, reverse=True)
         
         formatted_bids = []
@@ -646,15 +354,15 @@ def get_user_bids(user_id: str) -> dict:
     """
     try:
         config = RecommendationAgentConfig()
-        bid_db = BidDatabase(config.bids_db_path)
-        product_db = ProductDatabase(config.products_db_path)
+        bid_service = BidService(config.bids_db_path)
+        product_service = ProductService(config.products_db_path)
         
-        user_bids = bid_db.get_bids_for_user(user_id)
+        user_bids = bid_service.get_bids_for_user(user_id)
         user_bids.sort(key=lambda x: x.timestamp, reverse=True)
         
         formatted_bids = []
         for bid in user_bids:
-            product = product_db.get_product(bid.product_id)
+            product = product_service.get_product(bid.product_id)
             if product:
                 time_left = product.auction_end_time - datetime.now()
                 formatted_bids.append({
@@ -703,44 +411,21 @@ def sync_with_listing_agent(listing_data: dict) -> dict:
     Sync a new product from the listing agent
     """
     try:
+        # Validate incoming data using the Product model
+        product_data = Product(**listing_data)
+
         config = RecommendationAgentConfig()
-        db = ProductDatabase(config.products_db_path)
         
-        # Convert listing data to auction product
-        product = AuctionProduct(
-            product_id=str(uuid.uuid4()),
-            title=listing_data.get("title", ""),
-            description=listing_data.get("description", ""),
-            condition=ProductCondition(listing_data.get("condition", "good")),
-            category=listing_data.get("category", "General"),
-            brand=listing_data.get("brand"),
-            model=listing_data.get("model"),
-            tags=listing_data.get("tags", []),
-            starting_price=listing_data.get("suggested_price", 10.0),
-            current_bid=listing_data.get("suggested_price", 10.0),
-            buy_now_price=listing_data.get("suggested_price", 10.0) * 1.5,
-            reserve_price=listing_data.get("suggested_price", 10.0) * 0.8,
-            auction_end_time=datetime.now() + timedelta(days=7),  # 7-day auction
-            auction_status=AuctionStatus.ACTIVE,
-            bid_count=0,
-            watchers=0,
-            seller_id="listing_agent",
-            image_urls=[],
-            shipping_cost=15.0,
-            location="Online",
-            created_at=datetime.now(),
-            updated_at=datetime.now()
-        )
+        # Add the product to database using ProductService
+        product_service = config.product_service.create_product(product_data)
         
-        # Add to database
-        db.add_product(product)
-        
-        logger.info(f"Synced new product from listing agent: {product.product_id}")
+        logger.info(f"Synced new product from listing agent: {product_service.id}")
         
         return {
             "status": "success",
-            "product_id": product.product_id,
-            "message": "Product successfully added to auction database"
+            "product_id": product_service.id,
+            "database_id": product_service.id,
+            "message": "Product successfully added to database"
         }
         
     except Exception as e:
@@ -795,8 +480,8 @@ class RecommendationAgentOrchestrator:
     def __init__(self):
         self.recommendation_agent = recommendation_agent
         self.config = RecommendationAgentConfig()
-        self.product_db = ProductDatabase(self.config.products_db_path)
-        self.bid_db = BidDatabase(self.config.bids_db_path)
+        self.product_service = self.config.product_service
+        self.bid_service = self.config.bid_service
         self.session = None
     
     def initialize_session(self):
@@ -823,7 +508,7 @@ class RecommendationAgentOrchestrator:
             if recommendations["status"] == "success":
                 for rec in recommendations["recommendations"]:
                     product_id = rec["product"]["product_id"]
-                    current_product = self.product_db.get_product(product_id)
+                    current_product = self.product_service.get_product(product_id)
                     if current_product:
                         # Update with latest auction data
                         rec["product"]["current_bid"] = current_product.current_bid
@@ -854,7 +539,7 @@ class RecommendationAgentOrchestrator:
                 self.initialize_session()
             
             # Validate bid amount
-            product = self.product_db.get_product(product_id)
+            product = self.product_service.get_product(product_id)
             if not product:
                 return {
                     "status": "error",
@@ -1032,8 +717,8 @@ if __name__ == "__main__":
         print("✓ Recommendation Agent initialized successfully!")
         
         # Test database initialization
-        print(f"✓ Loaded {len(orchestrator.product_db.products)} products")
-        print(f"✓ Loaded {len(orchestrator.bid_db.bids)} bids")
+        print(f"✓ Loaded {len(orchestrator.product_service.products)} products")
+        print(f"✓ Loaded {len(orchestrator.bid_service.bids)} bids")
         
         # Test some functions
         print("\n--- Testing Recommendations ---")
@@ -1050,10 +735,6 @@ if __name__ == "__main__":
         print("\n--- Testing Search ---")
         search_results = search_products_by_query("iPhone")
         print(f"✓ Found {search_results.get('total_found', 0)} products for 'iPhone'")
-        
-        print("\n--- Testing Market Trends ---")
-        trends = get_market_trends("Electronics")
-        print(f"✓ Generated market trends for Electronics category")
         
         print("\n🎉 All tests passed! Recommendation Agent is ready to use.")
         
