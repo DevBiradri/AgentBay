@@ -2,3 +2,4 @@
 .pytest_cache/
 app/agents/listing_agent/.env
 app/agents/voice_agent/.env
+app/agents/recommendation_agent/.env
