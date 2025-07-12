@@ -125,3 +125,12 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+/* custom css */
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: 1px !important; 
+  /* box-shadow: none !important;*/
+}

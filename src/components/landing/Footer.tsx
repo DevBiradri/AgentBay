@@ -7,10 +7,10 @@ const Footer = () => {
         <div className="flex flex-col md:flex-row justify-between items-center">
           <div className="flex items-center space-x-2 mb-4 md:mb-0">
             <Sparkles className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold">AIMarket</span>
+            <span className="text-xl font-bold">AgentBay</span>
           </div>
           <p className="text-muted-foreground">
-            © 2024 AIMarket. All rights reserved.
+            © 2024 AgentBay. All rights reserved.
           </p>
         </div>
       </div>
