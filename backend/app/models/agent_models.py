@@ -4,6 +4,7 @@ from datetime import datetime
 from ..enums.enums import BidStatus
 
 class Product(BaseModel):
+    id: int = None
     title: str
     description: str
     condition: str

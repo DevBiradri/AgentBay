@@ -13,7 +13,7 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import axios from "axios";
 import Swal from 'sweetalert2';
 import RecommendationCards from "@/components/RecommendationCards";
-import ProductForm, {ProductData} from "@/components/landing/ProductForm";
+import ProductForm, { ProductData } from "@/components/landing/ProductForm";
 
 type Mode = 'selection' | 'buyer' | 'seller';
 type ChatMessage = {
@@ -55,10 +55,14 @@ const Chat = () => {
     amount: ''
   });
   const [isRecommendationsPanelCollapsed, setIsRecommendationsPanelCollapsed] = useState(false);
+  const [listingData, setListingData] = useState<ProductData | undefined>(undefined);
+  const [uploadedImage, setUploadedImage] = useState<File | null>(null);
+  const [viewBidsDialogOpen, setViewBidsDialogOpen] = useState(false);
+  const [bidsData, setBidsData] = useState<any>(null); // To store bids for a product
   const navigate = useNavigate();
 
-//   speech regonigition methods
-const {
+  //   speech regonigition methods
+  const {
     transcript,
     listening,
     resetTranscript,
@@ -67,13 +71,12 @@ const {
 
   useEffect(() => {
     if (transcript && isListening) {
-      console.log(transcript)
       setInputText(transcript);
     }
   }, [transcript]);
 
   useEffect(() => {
-    console.log("Listening state changed:", isListening);
+    // console.log("Listening state changed:", isListening); // Removed console.log
   }, [isListening]);
 
   const toggleMic = () => {
@@ -91,13 +94,45 @@ const {
       setIsListening(true);
     }
   };
-//   ============================================= //Product form submition here
-const handleProductSubmit = (data: ProductData) => {
-  console.log('Product form submitted:', data);
-  // TODO: send data to your backend or AI generation endpoint
-};
+  // Handles image upload and API call for seller mode
+  const [imageLoading, setImageLoading] = useState(false);
+  const handleImageUpload = async (imageFile: File) => {
+    setUploadedImage(imageFile);
+    setImageLoading(true);
+    const formData = new FormData();
+    formData.append("image", imageFile);
+    const res = await fetch("http://127.0.0.1:8000/api/agent/create-listing", {
+      method: "POST",
+      body: formData,
+    });
+    const data = await res.json();
+    console.log(data);
+    setListingData({
+      imageFile,
+      title: data.product.title || "",
+      category: data.product.category || "",
+      description: data.product.description || "",
+      tags: Array.isArray(data.product.tags) ? data.product.tags.join(", ") : "",
+      price: data.product.suggested_price !== undefined ? data.product.suggested_price.toString() : "",
+      imageUrl: data.product.image_url || "",
+      condition: data.product.condition || "new",
+      brand: data.product.brand || "",
+      model: data.product.model || "",
+      confidence_score: data.product.confidence_score !== undefined ? data.product.confidence_score : 0.95,
+    });
+    setImageLoading(false);
+  };
 
-// ===============================================
+  // Product form submission for seller mode
+  const handleProductSubmit = async (data: ProductData) => {
+    await fetch("http://127.0.0.1:8000/api/agent/submit-listing", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+  };
+
+  // ===============================================
 
   const handleSendMessage = async () => {
     if (!inputText.trim()) return;
@@ -128,7 +163,7 @@ const handleProductSubmit = (data: ProductData) => {
       if (response.data && response.data.results) {
         const newRecommendations = response.data.results;
         setRecommendations(newRecommendations);
-        
+
         // Add to recommendation history
         setRecommendationHistory(prev => [...prev, {
           query: currentQuery,
@@ -182,6 +217,26 @@ const handleProductSubmit = (data: ProductData) => {
     setBidDialogOpen(true);
   };
 
+  const handleViewBidsClick = async (product: Recommendation) => {
+    if (!product.id) return;
+    try {
+      const response = await axios.get(`http://localhost:8000/api/products/${product.id}/bids`);
+      setBidsData(response.data);
+      setViewBidsDialogOpen(true);
+    } catch (error) {
+      console.error('Error fetching bids:', error);
+      Swal.fire({
+        title: 'Error!',
+        customClass: {
+          popup: 'swal-glass'
+        },
+        text: 'Failed to fetch bids. Please try again later.',
+        icon: 'error',
+        confirmButtonColor: '#ef4444'
+      });
+    }
+  };
+
   const handleBidSubmit = async () => {
     if (!selectedProduct || !bidFormData.user_id || !bidFormData.amount) {
       alert('Please fill in all fields');
@@ -204,6 +259,9 @@ const handleProductSubmit = (data: ProductData) => {
 
       await Swal.fire({
         title: 'Bid Placed Successfully!',
+        customClass: {
+          popup: 'swal-glass'
+        },
         text: `Your bid of $${bidFormData.amount} has been placed for ${selectedProduct.title}`,
         icon: 'success',
         confirmButtonText: 'Great!',
@@ -218,6 +276,9 @@ const handleProductSubmit = (data: ProductData) => {
       console.error('Bid submission error:', error);
       await Swal.fire({
         title: 'Bid Failed',
+        customClass: {
+          popup: 'swal-glass'
+        },
         text: 'Failed to place bid. Please try again.',
         icon: 'error',
         confirmButtonText: 'OK',
@@ -235,7 +296,7 @@ const handleProductSubmit = (data: ProductData) => {
         <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-secondary/5 rounded-full blur-3xl"></div>
-        
+
         {/* Header */}
         <nav className="relative z-10 border-b border-border/20 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
           <div className="container flex h-16 items-center">
@@ -260,7 +321,7 @@ const handleProductSubmit = (data: ProductData) => {
 
         {/* Mode Selection */}
         <div className="relative z-10 flex-1 flex items-center justify-center p-6 min-h-[calc(100vh-4rem)]">
-          <div className="max-w-2xl w-full space-y-12 text-center">
+          <div className="max-w-3xl w-full space-y-12 text-center">
             <div className="space-y-6">
               <div className="relative">
                 <div className="w-24 h-24 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center mx-auto shadow-glow animate-float">
@@ -368,13 +429,13 @@ const handleProductSubmit = (data: ProductData) => {
 
   return (
     <div className="h-screen bg-gradient-to-br relative overflow-hidden flex flex-col">
-      
+
       {/* Futuristic background elements */}
-        <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-secondary/5 rounded-full blur-3xl"></div>
-        
-      
+      <div className="absolute inset-0 bg-grid-pattern opacity-5"></div>
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-secondary/5 rounded-full blur-3xl"></div>
+
+
       {/* Header */}
       <nav className="relative z-10 border-b border-border/20 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 flex-shrink-0">
         <div className="container flex h-16 items-center">
@@ -421,169 +482,183 @@ const handleProductSubmit = (data: ProductData) => {
           <div className="flex-1 overflow-y-auto">
             <div className="p-6 h-full">
               <div className={`${messages.length > 0 && recommendationHistory.length > 0 ? 'max-w-2xl' : 'max-w-4xl'} mx-auto space-y-6 transition-all duration-300`}>
-              {messages.length === 0 && (
-                <div className="text-center space-y-8 py-16">
-                  <div className="relative">
-                    <div className={`${messages.length > 0 && recommendationHistory.length > 0 ? 'w-20 h-20' : 'w-24 h-24'} ${mode === 'buyer' ? 'bg-gradient-to-br from-secondary to-secondary/80' : 'bg-gradient-to-br from-primary to-primary/80'} rounded-full flex items-center justify-center mx-auto shadow-glow animate-float`}>
-                      {mode === 'buyer' ? (
-                        <Search className={`${messages.length > 0 && recommendationHistory.length > 0 ? 'w-10 h-10' : 'w-12 h-12'} text-white`} />
-                      ) : (
-                        <Camera className={`${messages.length > 0 && recommendationHistory.length > 0 ? 'w-10 h-10' : 'w-12 h-12'} text-white`} />
-                      )}
+                {messages.length === 0 && (
+                  <div className="text-center space-y-8 py-16">
+                    <div className="relative">
+                      <div className={`${messages.length > 0 && recommendationHistory.length > 0 ? 'w-20 h-20' : 'w-24 h-24'} ${mode === 'buyer' ? 'bg-gradient-to-br from-secondary to-secondary/80' : 'bg-gradient-to-br from-primary to-primary/80'} rounded-full flex items-center justify-center mx-auto shadow-glow animate-float`}>
+                        {mode === 'buyer' ? (
+                          <Search className={`${messages.length > 0 && recommendationHistory.length > 0 ? 'w-10 h-10' : 'w-12 h-12'} text-white`} />
+                        ) : (
+                          <Camera className={`${messages.length > 0 && recommendationHistory.length > 0 ? 'w-10 h-10' : 'w-12 h-12'} text-white`} />
+                        )}
+                      </div>
+                      <div className={`absolute inset-0 ${messages.length > 0 && recommendationHistory.length > 0 ? 'w-20 h-20' : 'w-24 h-24'} mx-auto rounded-full border-2 border-primary/20 animate-ping`}></div>
                     </div>
-                    <div className={`absolute inset-0 ${messages.length > 0 && recommendationHistory.length > 0 ? 'w-20 h-20' : 'w-24 h-24'} mx-auto rounded-full border-2 border-primary/20 animate-ping`}></div>
+                    <div className="space-y-4">
+                      <h2 className={`${messages.length > 0 && recommendationHistory.length > 0 ? 'text-2xl' : 'text-3xl'} font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent`}>
+                        {mode === 'buyer' ? 'Discover Amazing Products' : 'Create Perfect Listings'}
+                      </h2>
+                      <p className={`text-muted-foreground ${messages.length > 0 && recommendationHistory.length > 0 ? 'text-sm max-w-md' : 'text-lg max-w-2xl'} mx-auto leading-relaxed`}>
+                        {mode === 'buyer'
+                          ? messages.length > 0 && recommendationHistory.length > 0
+                            ? 'Try: "Find me vintage sneakers under $100" or "Show me gaming laptops"'
+                            : 'Try: "Find me vintage sneakers under $100" or "Show me gaming laptops with good reviews"'
+                          : 'Upload photos of your item and I\'ll help create the perfect listing with optimized descriptions'
+                        }
+                      </p>
+                    </div>
                   </div>
-                  <div className="space-y-4">
-                    <h2 className={`${messages.length > 0 && recommendationHistory.length > 0 ? 'text-2xl' : 'text-3xl'} font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent`}>
-                      {mode === 'buyer' ? 'Discover Amazing Products' : 'Create Perfect Listings'}
-                    </h2>
-                    <p className={`text-muted-foreground ${messages.length > 0 && recommendationHistory.length > 0 ? 'text-sm max-w-md' : 'text-lg max-w-2xl'} mx-auto leading-relaxed`}>
-                      {mode === 'buyer'
-                        ? messages.length > 0 && recommendationHistory.length > 0
-                          ? 'Try: "Find me vintage sneakers under $100" or "Show me gaming laptops"'
-                          : 'Try: "Find me vintage sneakers under $100" or "Show me gaming laptops with good reviews"'
-                        : 'Upload photos of your item and I\'ll help create the perfect listing with optimized descriptions'
-                      }
-                    </p>
-                  </div>
-                </div>
-              )}
+                )}
 
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${message.isUser ? 'justify-end' : 'justify-start'} animate-slide-up`}
-                >
+                {messages.map((message) => (
                   <div
-                    className={`${messages.length > 0 && recommendationHistory.length > 0 ? 'max-w-xs lg:max-w-sm' : 'max-w-md lg:max-w-lg'} px-4 py-3 rounded-2xl backdrop-blur-xl border border-border/30 shadow-lg ${
-                      message.isUser
-                        ? 'bg-gradient-to-br from-primary to-primary/90 text-primary-foreground'
-                        : 'bg-gradient-to-br from-white/10 to-white/5 text-foreground'
-                    }`}
+                    key={message.id}
+                    className={`flex ${message.isUser ? 'justify-end' : 'justify-start'} animate-slide-up`}
                   >
-                    <p className={`leading-relaxed ${messages.length > 0 && recommendationHistory.length > 0 ? 'text-sm' : 'text-base'}`}>{message.text}</p>
+                    <div
+                      className={`${messages.length > 0 && recommendationHistory.length > 0 ? 'max-w-xs lg:max-w-sm' : 'max-w-md lg:max-w-lg'} px-4 py-3 rounded-2xl backdrop-blur-xl border border-border/30 shadow-lg ${message.isUser
+                          ? 'bg-gradient-to-br from-primary to-primary/90 text-primary-foreground'
+                          : 'bg-gradient-to-br from-white/10 to-white/5 text-foreground'
+                        }`}
+                    >
+                      <p className={`leading-relaxed ${messages.length > 0 && recommendationHistory.length > 0 ? 'text-sm' : 'text-base'}`}>{message.text}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
 
-              {isLoading && (
-                <div className="flex justify-start animate-slide-up">
-                  <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-border/30 px-4 py-3 rounded-2xl shadow-lg">
-                    <div className="flex items-center space-x-2">
-                      <Bot className="w-4 h-4 text-primary animate-pulse" />
-                      <div className="flex space-x-1">
-                        <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
-                        <div className="w-2 h-2 bg-primary rounded-full animate-bounce delay-100"></div>
-                        <div className="w-2 h-2 bg-primary rounded-full animate-bounce delay-200"></div>
+                {isLoading && (
+                  <div className="flex justify-start animate-slide-up">
+                    <div className="bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-border/30 px-4 py-3 rounded-2xl shadow-lg">
+                      <div className="flex items-center space-x-2">
+                        <Bot className="w-4 h-4 text-primary animate-pulse" />
+                        <div className="flex space-x-1">
+                          <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
+                          <div className="w-2 h-2 bg-primary rounded-full animate-bounce delay-100"></div>
+                          <div className="w-2 h-2 bg-primary rounded-full animate-bounce delay-200"></div>
+                        </div>
                       </div>
                     </div>
                   </div>
+                )}
+
+                {mode === 'seller' && (
+                  <div className="p-6 max-w-4xl mx-auto">
+                    <section className="py-16">
+                      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <h2 className="text-2xl font-bold text-foreground mb-6">
+                          Add Your Own Product
+                        </h2>
+                        {/* Product form with image upload handled via onImageUpload */}
+                        <ProductForm
+                          initialData={listingData}
+                          onSubmit={handleProductSubmit}
+                          onImageUpload={handleImageUpload}
+                          imagePreview={uploadedImage ? URL.createObjectURL(uploadedImage) : undefined}
+                          imageLoading={imageLoading}
+                          submitButtonColor="bg-gradient-to-r from-primary to-primary/90 text-white hover:from-primary/90 hover:to-primary"
+                          imageUrl={listingData?.imageUrl}
+                          condition={listingData?.condition}
+                          brand={listingData?.brand}
+                          model={listingData?.model}
+                          confidence_score={listingData?.confidence_score}
+                        />
+                      </div>
+                    </section>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Input Area for Chat - Fixed at bottom of chat section */}
+          {mode === 'buyer' && (
+            <div className="flex-shrink-0 border-t border-border/20 bg-background/80 backdrop-blur-xl p-4">
+              <div className={`${messages.length > 0 && recommendationHistory.length > 0 ? 'max-w-2xl' : 'max-w-4xl'} mx-auto`}>
+                <div className="flex items-end space-x-3">
+                  <Button
+                    onClick={toggleMic}
+                    variant="outline"
+                    size="icon"
+                    className="mb-2 border-border/30 bg-background/50 backdrop-blur hover:bg-secondary/10 hover:border-secondary/30"
+                  >
+                    <Mic className="h-4 w-4" />
+                  </Button>
+
+                  <div className="flex-1 relative">
+                    <Input
+                      onFocus={() => setIsListening(false)}
+                      value={inputText}
+                      onChange={(e) => setInputText(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      placeholder={messages.length > 0 && recommendationHistory.length > 0 ? "Ask me to find products..." : "Ask me to find products... (e.g., 'vintage sneakers under $100')"}
+                      className={`pr-16 ${messages.length > 0 && recommendationHistory.length > 0 ? 'h-10 text-sm' : 'h-12 text-base'} bg-background/50 backdrop-blur border-border/30 focus:border-primary/50 focus:bg-background/70 rounded-xl transition-all duration-300`}
+                    />
+                    <Button
+                      onClick={handleSendMessage}
+                      disabled={!inputText.trim() || isLoading}
+                      className={`absolute right-2 top-1/2 -translate-y-1/2 ${messages.length > 0 && recommendationHistory.length > 0 ? 'h-6 px-3 text-xs' : 'h-8 px-4 text-sm'} bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg transition-all duration-300`}
+                    >
+                      Send
+                    </Button>
+                  </div>
                 </div>
-              )}
-             </div>
-           </div>
-           {/* Future Form Area - For Seller */}
-{mode === 'seller' && (
-    <div className="p-6 max-w-4xl mx-auto">
+              </div>
+            </div>
+          )}
 
-    <section className="py-16  ">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl font-bold text-foreground mb-6">
-            Add Your Own Product
-          </h2>
-          <ProductForm onSubmit={handleProductSubmit} />
+          {/* Future Form Area - For Seller */}
+          {mode === 'seller' && (
+            <div className="flex-shrink-0 p-6">
+              {/* Placeholder for seller form (you can insert form here later) */}
+            </div>
+          )}
         </div>
-      </section>
-  </div>
 
-)}
+        {/* Right Side - Recommendations - Only show when there are messages and recommendations */}
+        {messages.length > 0 && recommendationHistory.length > 0 && (
+          <div className="w-1/2 overflow-y-auto bg-gradient-to-br from-muted/5 to-muted/10">
+            <div className="p-6 h-full">
+              <div className="space-y-6">
+                <div className="text-center pb-4 border-b border-border/20">
+                  <h3 className="text-xl font-semibold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                    Product Recommendations
+                  </h3>
+                </div>
+
+                <div className="space-y-6">
+                  {recommendationHistory.map((historyItem, historyIndex) => (
+                    <div key={historyIndex} className="space-y-3">
+                      {/* Query Header */}
+                      <div className="flex items-center justify-between pb-2 border-b border-border/10">
+                        <div className="flex items-center space-x-2">
+                          <Search className="h-4 w-4 text-primary" />
+                          <h4 className="text-sm font-semibold text-foreground">
+                            "{historyItem.query}"
+                          </h4>
+                          <Badge variant="secondary" className="text-xs">
+                            {historyItem.recommendations.length}
+                          </Badge>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {historyItem.timestamp.toLocaleTimeString()}
+                        </div>
+                      </div>
+
+                      {/* Recommendations for this query */}
+                      <RecommendationCards
+                        recommendations={historyItem.recommendations}
+                        handleBidClick={handleBidClick}
+                        onViewBidsClick={handleViewBidsClick}
+                        useCarousel={true}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-
-         {/* Input Area for Chat - Fixed at bottom of chat section */}
-         {mode === 'buyer' && (
-           <div className="flex-shrink-0 border-t border-border/20 bg-background/80 backdrop-blur-xl p-4">
-             <div className={`${messages.length > 0 && recommendationHistory.length > 0 ? 'max-w-2xl' : 'max-w-4xl'} mx-auto`}>
-               <div className="flex items-end space-x-3">
-                 <Button
-                   onClick={toggleMic}
-                   variant="outline"
-                   size="icon"
-                   className="mb-2 border-border/30 bg-background/50 backdrop-blur hover:bg-secondary/10 hover:border-secondary/30"
-                 >
-                   <Mic className="h-4 w-4" />
-                 </Button>
-                 
-                 <div className="flex-1 relative">
-                   <Input
-                     onFocus={() => setIsListening(false)}
-                     value={inputText}
-                     onChange={(e) => setInputText(e.target.value)}
-                     onKeyPress={handleKeyPress}
-                     placeholder={messages.length > 0 && recommendationHistory.length > 0 ? "Ask me to find products..." : "Ask me to find products... (e.g., 'vintage sneakers under $100')"}
-                     className={`pr-16 ${messages.length > 0 && recommendationHistory.length > 0 ? 'h-10 text-sm' : 'h-12 text-base'} bg-background/50 backdrop-blur border-border/30 focus:border-primary/50 focus:bg-background/70 rounded-xl transition-all duration-300`}
-                   />
-                   <Button
-                     onClick={handleSendMessage}
-                     disabled={!inputText.trim() || isLoading}
-                     className={`absolute right-2 top-1/2 -translate-y-1/2 ${messages.length > 0 && recommendationHistory.length > 0 ? 'h-6 px-3 text-xs' : 'h-8 px-4 text-sm'} bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg transition-all duration-300`}
-                   >
-                     Send
-                   </Button>
-                 </div>
-               </div>
-             </div>
-           </div>
-         )}
-
-         {/* Future Form Area - For Seller */}
-         {mode === 'seller' && (
-           <div className="flex-shrink-0 p-6">
-             {/* Placeholder for seller form (you can insert form here later) */}
-           </div>
-         )}
-       </div>
-
-       {/* Right Side - Recommendations - Only show when there are messages and recommendations */}
-       {messages.length > 0 && recommendationHistory.length > 0 && (
-         <div className="w-1/2 overflow-y-auto bg-gradient-to-br from-muted/5 to-muted/10">
-           <div className="p-6 h-full">
-             <div className="space-y-6">
-               <div className="text-center pb-4 border-b border-border/20">
-                 <h3 className="text-xl font-semibold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                   Product Recommendations
-                 </h3>
-               </div>
-               
-               <div className="space-y-6">
-                 {recommendationHistory.map((historyItem, historyIndex) => (
-                   <div key={historyIndex} className="space-y-3">
-                     {/* Query Header */}
-                     <div className="flex items-center justify-between pb-2 border-b border-border/10">
-                       <div className="flex items-center space-x-2">
-                         <Search className="h-4 w-4 text-primary" />
-                         <h4 className="text-sm font-semibold text-foreground">
-                           "{historyItem.query}"
-                         </h4>
-                         <Badge variant="secondary" className="text-xs">
-                           {historyItem.recommendations.length}
-                         </Badge>
-                       </div>
-                       <div className="text-xs text-muted-foreground">
-                         {historyItem.timestamp.toLocaleTimeString()}
-                       </div>
-                     </div>
-                     
-                     {/* Recommendations for this query */}
-                     <RecommendationCards recommendations={historyItem.recommendations} handleBidClick={handleBidClick} useCarousel={true} />
-                   </div>
-                 ))}
-               </div>
-             </div>
-           </div>
-         </div>
-       )}
-     </div>
-
 
       {/* Bid Dialog */}
       <Dialog open={bidDialogOpen} onOpenChange={setBidDialogOpen}>
@@ -609,7 +684,7 @@ const handleProductSubmit = (data: ProductData) => {
                   </p>
                 </div>
               </div>
-              
+
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="user_id">Your Name</Label>
@@ -620,7 +695,7 @@ const handleProductSubmit = (data: ProductData) => {
                     placeholder="Enter your name"
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="amount">Bid Amount ($)</Label>
                   <Input
@@ -633,7 +708,7 @@ const handleProductSubmit = (data: ProductData) => {
                   />
                 </div>
               </div>
-              
+
               <div className="flex justify-end space-x-2 pt-4">
                 <Button variant="outline" onClick={() => setBidDialogOpen(false)}>
                   Cancel
@@ -648,6 +723,36 @@ const handleProductSubmit = (data: ProductData) => {
         </DialogContent>
       </Dialog>
 
+      {/* View Bids Dialog */}
+      <Dialog open={viewBidsDialogOpen} onOpenChange={setViewBidsDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Bids for {selectedProduct?.title}</DialogTitle>
+          </DialogHeader>
+          {bidsData && bidsData.bids && (
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">Total Bids: {bidsData.bid_count}</p>
+              {bidsData.bids.length > 0 ? (
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {bidsData.bids.map((bid: any, index: number) => (
+                    <div key={index} className="flex justify-between items-center p-2 border rounded-lg">
+                      <div>
+                        <p className="font-medium">{bid.user_id}</p>
+                        <p className="text-sm text-muted-foreground">${bid.amount} - {new Date(bid.timestamp).toLocaleString()}</p>
+                      </div>
+                      <Badge variant={bid.status === 'winning' ? 'default' : 'secondary'}>
+                        {bid.status}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p>No bids yet for this product.</p>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

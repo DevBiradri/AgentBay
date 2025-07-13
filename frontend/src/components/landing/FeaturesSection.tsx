@@ -2,6 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Camera, Shield, Mic, CheckCircle } from "lucide-react";
 import uploadFeature from "@/assets/upload-feature.jpg";
 import searchFeature from "@/assets/search-feature.jpg";
+import personalizedFeature from "@/assets/personalized-experience.jpg";
 
 const FeaturesSection = () => {
   return (
@@ -63,30 +64,17 @@ const FeaturesSection = () => {
               <div className="w-16 h-16 bg-gradient-to-br from-warning to-success rounded-lg flex items-center justify-center mb-4">
                 <Shield className="w-8 h-8 text-white" />
               </div>
-              <CardTitle>Scam Detection</CardTitle>
+              <CardTitle>Personalized Experience</CardTitle>
               <CardDescription>
-                Advanced AI algorithms detect and prevent potential scams, keeping you safe
+                Every user gets a unique, tailored experience that learns and improves with each interaction.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center space-x-2 text-success">
-                <CheckCircle className="w-5 h-5" />
-                <span className="font-medium">99.9% Protection Rate</span>
-              </div>
-              <div className="mt-4 space-y-2">
-                <div className="flex items-center text-sm text-muted-foreground">
-                  <CheckCircle className="w-4 h-4 mr-2 text-success" />
-                  Real-time verification
-                </div>
-                <div className="flex items-center text-sm text-muted-foreground">
-                  <CheckCircle className="w-4 h-4 mr-2 text-success" />
-                  AI risk assessment
-                </div>
-                <div className="flex items-center text-sm text-muted-foreground">
-                  <CheckCircle className="w-4 h-4 mr-2 text-success" />
-                  Secure transactions
-                </div>
-              </div>
+              <img
+                src={personalizedFeature}
+                alt="Personalized Experience"
+                className="w-full h-48 object-cover rounded-lg"
+              />
             </CardContent>
           </Card>
         </div>

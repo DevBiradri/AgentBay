@@ -265,9 +265,17 @@ class BidService:
             session.query(BidDB).filter(BidDB.id == winning_bid_id).update(
                 {BidDB.status: BidStatus.WINNING.value}
             )
+
+            # Get the winning bid to update the product's current_bid
+            winning_bid = session.query(BidDB).filter(BidDB.id == winning_bid_id).first()
+            if winning_bid:
+                # Update the product's current_bid
+                session.query(ProductDB).filter(ProductDB.id == product_id).update(
+                    {ProductDB.current_bid: winning_bid.amount}
+                )
             
             self.db_manager.commit_session(session)
-            logger.info(f"Updated bid statuses for product {product_id}, winning bid: {winning_bid_id}")
+            logger.info(f"Updated bid statuses and product current_bid for product {product_id}, winning bid: {winning_bid_id}")
             
         except Exception as e:
             self.db_manager.rollback_session(session)

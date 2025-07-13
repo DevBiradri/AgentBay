@@ -246,23 +246,22 @@ def generate_listing_description(product_analysis: dict) -> dict:
         
         # Create prompt for description generation
         prompt = f"""
-        Create a professional, detailed auction listing description based on this product analysis.
+        Create a concise, informative product description based on this product analysis.
         
         Product Analysis:
         {json.dumps(product_analysis, indent=2)}
         
         Requirements:
-        - Write in a professional, auction-style tone
-        - Include all relevant details from the analysis
-        - Mention condition and any defects honestly
-        - Highlight key features and selling points
-        - Include dimensions, materials, and technical details
-        - Make it concise but informative
-        - Use proper formatting with line breaks
-        - Be truthful and accurate based on the analysis
+        - Keep it brief (3-5 sentences maximum)
+        - Focus on the most important features and benefits
+        - Mention condition clearly and honestly
+        - Include key specifications (size, material, etc.)
+        - Use engaging but straightforward language
+        - Highlight the main selling point first
+        - Be accurate based on the analysis data
         
-        Format the description with clear sections and bullet points where appropriate.
-        """
+        Format as a short paragraph with essential details only.
+        """
         
         response = model.generate_content(prompt)
         description = response.text.strip()

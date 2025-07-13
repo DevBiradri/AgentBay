@@ -1,5 +1,7 @@
 import React, { useState, ChangeEvent, FormEvent } from 'react';
-import { Save, Edit3 } from 'lucide-react';
+import { Save, Edit3, Upload } from 'lucide-react';
+import axios from 'axios';
+import Swal from 'sweetalert2';
 
 export type ProductData = {
   imageFile: File | null;
@@ -8,18 +10,46 @@ export type ProductData = {
   category: string;
   tags: string;
   price: string;
+  imageUrl?: string;
+  condition?: string;
+  brand?: string;
+  model?: string;
+  confidence_score?: number;
 };
 
 type ProductFormProps = {
   initialData?: ProductData;
   onSubmit: (data: ProductData) => void;
+  onImageUpload?: (file: File) => void;
+  imagePreview?: string;
+  imageLoading?: boolean;
+  submitButtonColor?: string;
+  imageUrl?: string;
+  condition?: string;
+  brand?: string;
+  model?: string;
+  confidence_score?: number;
 };
 
 const ProductForm: React.FC<ProductFormProps> = ({
   initialData = { imageFile: null, title: '', description: '', category: '', tags: '', price: '' },
   onSubmit,
+  onImageUpload,
+  imagePreview,
+  imageLoading,
+  submitButtonColor,
+  imageUrl,
+  condition,
+  brand,
+  model,
+  confidence_score,
 }) => {
   const [productData, setProductData] = useState<ProductData>(initialData);
+
+  // Update form fields when initialData changes
+  React.useEffect(() => {
+    setProductData(initialData);
+  }, [initialData]);
 
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -31,12 +61,65 @@ const ProductForm: React.FC<ProductFormProps> = ({
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
     setProductData((prev) => ({ ...prev, imageFile: file }));
+    if (file && onImageUpload) {
+      onImageUpload(file);
+    }
   };
 
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    onSubmit(productData);
+    try {
+      let data = JSON.stringify({
+        title: productData.title,
+        description: productData.description,
+        condition: condition || "new",
+        category: productData.category,
+        suggested_price: Number(productData.price),
+        current_bid: null,
+        tags: productData.tags.split(',').map(tag => tag.trim()),
+        brand: brand || "",
+        model: model || "",
+        confidence_score: confidence_score !== undefined ? confidence_score : 0.95,
+        image_url: imageUrl || "",
+      });
+      let config = {
+        method: 'post',
+        maxBodyLength: Infinity,
+        url: 'http://localhost:8000/api/products',
+        headers: { 'Content-Type': 'application/json' },
+        data: data
+      };
+      await axios.request(config);
+      Swal.fire({
+        title: 'Success!',
+        customClass: {
+          popup: 'swal-glass'
+        },
+        text: 'Listing created successfully.',
+        icon: 'success',
+        confirmButtonColor: '#10b981'
+      });
+      setProductData({
+        imageFile: null,
+        title: '',
+        description: '',
+        category: '',
+        tags: '',
+        price: '',
+      });
+    } catch (error) {
+      console.log("Error creating listing:", error);
+      Swal.fire({
+        title: 'Error!',
+        customClass: {
+          popup: 'swal-glass'
+        },
+        text: 'Failed to create listing.',
+        icon: 'error',
+        confirmButtonColor: '#ef4444'
+      });
+    }
   };
 
   return (
@@ -44,20 +127,46 @@ const ProductForm: React.FC<ProductFormProps> = ({
        <form onSubmit={handleSubmit} className="space-y-6">
       {/* File upload */}
       <div>
-        <label className="block text-sm font-medium text-foreground mb-2">
+        <label className="block text-base font-semibold text-foreground mb-2">
           Product Image
         </label>
         <input
           type="file"
           accept="image/*"
           onChange={handleFileChange}
-          className="block w-full text-sm text-foreground file:mr-4 file:py-2 file:px-4
-                     file:rounded-lg file:border-0
-                     file:text-sm file:font-semibold
-                     file:bg-purple-100 file:text-purple-700
-                     dark:file:bg-purple-900 dark:file:text-purple-200
-                     hover:file:bg-purple-200 dark:hover:file:bg-purple-800"
+          className="hidden" // Hide the default input
+          id="image-upload-input"
         />
+        <label
+          htmlFor="image-upload-input"
+          className={`flex items-center justify-center px-6 py-3 font-semibold rounded-lg transition-all cursor-pointer
+            ${imageLoading ? "bg-gray-400 text-white" : "bg-gradient-to-r from-primary to-primary/90 text-white !important hover:from-primary/90 hover:to-primary"}
+            `}
+          style={{ fontSize: "1.15rem", height: "48px" }}
+        >
+          {imageLoading ? (
+            <>
+              <svg className="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+              </svg>
+              Uploading and analyzing...
+            </>
+          ) : (
+            <>
+              <Upload className="w-4 h-4 mr-2" />
+              Choose Image
+            </>
+          )}
+        </label>
+        {productData.imageFile && (
+          <img
+            src={imagePreview}
+            alt="Preview"
+            className="mt-4 rounded-lg border border-primary w-full max-w-xs h-auto"
+            style={{ maxHeight: "220px", objectFit: "contain", background: "#fff" }}
+          />
+        )}
         {productData.imageFile && (
           <p className="mt-2 text-sm text-muted-foreground">
             {productData.imageFile.name}
@@ -93,7 +202,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
             value={productData.category}
             onChange={handleChange}
             className="w-full px-4 py-2 border border-border bg-background text-foreground rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            placeholder="Enter product title"
+            placeholder="Enter category title"
           />
 
         </div>
@@ -148,10 +257,16 @@ const ProductForm: React.FC<ProductFormProps> = ({
       <div className="flex space-x-4">
         <button
           type="submit"
-          className="flex items-center px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-semibold rounded-lg hover:from-purple-600 hover:to-purple-700 transition-all"
+          className={`flex items-center px-6 py-3 font-semibold rounded-lg transition-all ${
+            submitButtonColor
+              ? `${submitButtonColor} ${submitButtonColor.includes("white") ? "text-black" : "text-white"}`
+              : "bg-gradient-to-r from-primary to-primary/90 text-white !important hover:from-primary/90 hover:to-primary"
+          }`}
+          style={{ fontSize: "1.15rem" }}
+          disabled={imageLoading}
         >
           <Save className="w-4 h-4 mr-2" />
-          Publish Listing
+          {imageLoading ? "Processing..." : "Publish Listing"}
         </button>
         <button
           type="button"

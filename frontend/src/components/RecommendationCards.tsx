@@ -20,10 +20,11 @@ type Recommendation = {
 type RecommendationCardsProps = {
   recommendations: Recommendation[];
   handleBidClick: (item: Recommendation) => void;
+  onViewBidsClick: (item: Recommendation) => void; // New prop for viewing bids
   useCarousel?: boolean; // New prop
 };
 
-const RecommendationCards = ({ recommendations, handleBidClick, useCarousel = true }: RecommendationCardsProps) => {
+const RecommendationCards = ({ recommendations, handleBidClick, onViewBidsClick, useCarousel = true }: RecommendationCardsProps) => {
   if (recommendations.length === 0) return null;
 
   const ProductCard = ({ item }: { item: Recommendation }) => (
@@ -72,15 +73,25 @@ const RecommendationCards = ({ recommendations, handleBidClick, useCarousel = tr
               </Badge>
             ))}
           </div>
-          {/* Bid Button */}
-          <Button
-            onClick={() => handleBidClick(item)}
-            size="sm"
-            className="w-full bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg text-xs"
-          >
-            <Gavel className="h-3 w-3 mr-1" />
-            Place Bid
-          </Button>
+          {/* Action Buttons */}
+          <div className="flex space-x-2">
+            <Button
+              onClick={() => handleBidClick(item)}
+              size="sm"
+              className="flex-1 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg text-xs"
+            >
+              <Gavel className="h-3 w-3 mr-1" />
+              Place Bid
+            </Button>
+            <Button
+              onClick={() => onViewBidsClick(item)}
+              size="sm"
+              variant="outline"
+              className="flex-1 border-primary/30 text-primary hover:bg-primary/10 text-xs"
+            >
+              View Bids
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -95,6 +106,7 @@ const RecommendationCards = ({ recommendations, handleBidClick, useCarousel = tr
             align: "start",
             loop: false,
           }}
+          style={{ maxWidth: '90%', marginLeft: 'auto', marginRight: 'auto' }}
           className="w-full"
         >
           <CarouselContent className="-ml-2">
