@@ -13,7 +13,7 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import axios from "axios";
 import Swal from 'sweetalert2';
 import RecommendationCards from "@/components/RecommendationCards";
-
+import ProductForm, {ProductData} from "@/components/landing/ProductForm";
 
 type Mode = 'selection' | 'buyer' | 'seller';
 type ChatMessage = {
@@ -91,7 +91,13 @@ const {
       setIsListening(true);
     }
   };
-//   =============================================
+//   ============================================= //Product form submition here
+const handleProductSubmit = (data: ProductData) => {
+  console.log('Product form submitted:', data);
+  // TODO: send data to your backend or AI generation endpoint
+};
+
+// ===============================================
 
   const handleSendMessage = async () => {
     if (!inputText.trim()) return;
@@ -476,7 +482,22 @@ const {
               )}
              </div>
            </div>
-         </div>
+           {/* Future Form Area - For Seller */}
+{mode === 'seller' && (
+    <div className="p-6 max-w-4xl mx-auto">
+
+    <section className="py-16  ">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl font-bold text-foreground mb-6">
+            Add Your Own Product
+          </h2>
+          <ProductForm onSubmit={handleProductSubmit} />
+        </div>
+      </section>
+  </div>
+
+)}
+      </div>
 
          {/* Input Area for Chat - Fixed at bottom of chat section */}
          {mode === 'buyer' && (

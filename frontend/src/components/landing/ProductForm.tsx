@@ -1,5 +1,5 @@
 import React, { useState, ChangeEvent, FormEvent } from 'react';
-import { Save, Edit3, Upload } from 'lucide-react';
+import { Save, Edit3 } from 'lucide-react';
 
 export type ProductData = {
   imageFile: File | null;
@@ -33,38 +33,43 @@ const ProductForm: React.FC<ProductFormProps> = ({
     setProductData((prev) => ({ ...prev, imageFile: file }));
   };
 
+
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     onSubmit(productData);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <div  className="p-8 rounded-xl shadow-xl bg-white dark:bg-gradient-to-br dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+       <form onSubmit={handleSubmit} className="space-y-6">
       {/* File upload */}
       <div>
-        <label className="block text-sm font-medium text-slate-700 mb-2">
+        <label className="block text-sm font-medium text-foreground mb-2">
           Product Image
         </label>
         <input
           type="file"
           accept="image/*"
           onChange={handleFileChange}
-          className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4
+          className="block w-full text-sm text-foreground file:mr-4 file:py-2 file:px-4
                      file:rounded-lg file:border-0
                      file:text-sm file:font-semibold
-                     file:bg-purple-50 file:text-purple-700
-                     hover:file:bg-purple-100"
+                     file:bg-purple-100 file:text-purple-700
+                     dark:file:bg-purple-900 dark:file:text-purple-200
+                     hover:file:bg-purple-200 dark:hover:file:bg-purple-800"
         />
         {productData.imageFile && (
-          <p className="mt-2 text-sm text-slate-600">{productData.imageFile.name}</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {productData.imageFile.name}
+          </p>
         )}
       </div>
 
-      {/* Rest of the fields */}
+      {/* Fields */}
       <div className="grid md:grid-cols-2 gap-6">
         {/* Title */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
+          <label className="block text-sm font-medium text-foreground mb-2">
             Product Title
           </label>
           <input
@@ -72,33 +77,30 @@ const ProductForm: React.FC<ProductFormProps> = ({
             name="title"
             value={productData.title}
             onChange={handleChange}
-            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-border bg-background text-foreground rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             placeholder="Enter product title"
           />
         </div>
 
         {/* Category */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
+          <label className="block text-sm font-medium text-foreground mb-2">
             Category
           </label>
-          <select
+          <input
+            type="text"
             name="category"
             value={productData.category}
             onChange={handleChange}
-            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-          >
-            <option value="">Select category</option>
-            <option value="Electronics">Electronics</option>
-            <option value="Fashion">Fashion</option>
-            <option value="Home & Garden">Home & Garden</option>
-            <option value="Sports">Sports & Outdoors</option>
-          </select>
+            className="w-full px-4 py-2 border border-border bg-background text-foreground rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            placeholder="Enter product title"
+          />
+
         </div>
 
         {/* Description */}
         <div className="md:col-span-2">
-          <label className="block text-sm font-medium text-slate-700 mb-2">
+          <label className="block text-sm font-medium text-foreground mb-2">
             Description
           </label>
           <textarea
@@ -106,14 +108,14 @@ const ProductForm: React.FC<ProductFormProps> = ({
             value={productData.description}
             onChange={handleChange}
             rows={4}
-            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-border bg-background text-foreground rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             placeholder="Describe your product"
           />
         </div>
 
         {/* Tags */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
+          <label className="block text-sm font-medium text-foreground mb-2">
             Tags (comma separated)
           </label>
           <input
@@ -121,14 +123,14 @@ const ProductForm: React.FC<ProductFormProps> = ({
             name="tags"
             value={productData.tags}
             onChange={handleChange}
-            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-border bg-background text-foreground rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             placeholder="wireless, premium, electronics"
           />
         </div>
 
         {/* Price */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">
+          <label className="block text-sm font-medium text-foreground mb-2">
             Price ($)
           </label>
           <input
@@ -136,7 +138,7 @@ const ProductForm: React.FC<ProductFormProps> = ({
             name="price"
             value={productData.price}
             onChange={handleChange}
-            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-border bg-background text-foreground rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             placeholder="0.00"
           />
         </div>
@@ -153,14 +155,25 @@ const ProductForm: React.FC<ProductFormProps> = ({
         </button>
         <button
           type="button"
-          onClick={() => onSubmit(productData)}
-          className="flex items-center px-6 py-3 border border-slate-300 text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition-colors"
+          onClick={() =>
+            setProductData({
+              imageFile: null,
+              title: '',
+              description: '',
+              category: '',
+              tags: '',
+              price: '',
+            })}
+          className="flex items-center px-6 py-3 border border-border text-foreground font-semibold rounded-lg hover:bg-accent transition-colors"
         >
           <Edit3 className="w-4 h-4 mr-2" />
-          Save as Draft
+          Clear
         </button>
       </div>
     </form>
+
+    </div>
+   
   );
 };
 
