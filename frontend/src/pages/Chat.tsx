@@ -300,7 +300,7 @@ const Chat = () => {
         {/* Header */}
         <nav className="relative z-10 border-b border-border/20 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
           <div className="container flex h-16 items-center">
-            <Button variant="ghost" onClick={() => navigate('/')} className="mr-4 hover:bg-white/10">
+            <Button variant="ghost" onClick={() => navigate('/')} className="mr-4 hover:bg-primary/10">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back
             </Button>
@@ -324,7 +324,7 @@ const Chat = () => {
           <div className="max-w-3xl w-full space-y-12 text-center">
             <div className="space-y-6">
               <div className="relative">
-                <div className="w-24 h-24 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center mx-auto shadow-glow animate-float">
+                <div className="w-24 h-24 bg-gradient-to-br from-secondary to-secondary/80 rounded-full flex items-center justify-center mx-auto shadow-glow animate-float">
                   <MessageCircle className="w-12 h-12 text-white" />
                 </div>
                 <div className="absolute inset-0 w-24 h-24 mx-auto rounded-full border-2 border-primary/30 animate-ping"></div>
@@ -359,7 +359,7 @@ const Chat = () => {
                     </p>
                   </div>
                   <div className="flex justify-center">
-                    <Badge variant="outline" className="border-secondary/30 text-secondary bg-secondary/5">
+                    <Badge variant="outline" className="border-primary/30 text-primary bg-primary/5">
                       <Shield className="w-3 h-3 mr-1" />
                       Protected
                     </Badge>
@@ -374,7 +374,7 @@ const Chat = () => {
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                 <CardContent className="relative p-8 space-y-6">
                   <div className="relative">
-                    <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary/80 rounded-2xl flex items-center justify-center mx-auto shadow-lg">
+                    <div className="w-16 h-16 bg-gradient-to-br from-secondary to-secondary/80 rounded-2xl flex items-center justify-center mx-auto shadow-lg">
                       <Camera className="w-8 h-8 text-white" />
                     </div>
                     <div className="absolute inset-0 w-16 h-16 mx-auto rounded-2xl border border-primary/30 animate-pulse"></div>
@@ -413,7 +413,7 @@ const Chat = () => {
                     </p>
                   </div>
                   <div className="flex justify-center">
-                    <Badge variant="outline" className="border-accent/30 text-accent bg-accent/5">
+                    <Badge variant="outline" className="border-accent/30 text-accent bg-accent/5 dark:text-white border-primary/30 text-primary bg-primary/5">
                       <Star className="w-3 h-3 mr-1" />
                       All Products
                     </Badge>
@@ -439,7 +439,7 @@ const Chat = () => {
       {/* Header */}
       <nav className="relative z-10 border-b border-border/20 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 flex-shrink-0">
         <div className="container flex h-16 items-center">
-          <Button variant="ghost" onClick={resetToSelection} className="mr-4 hover:bg-white/10">
+          <Button variant="ghost" onClick={resetToSelection} className="mr-4 hover:bg-primary/10 dark:hover:bg-white/10">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
@@ -484,8 +484,8 @@ const Chat = () => {
               <div className={`${messages.length > 0 && recommendationHistory.length > 0 ? 'max-w-2xl' : 'max-w-4xl'} mx-auto space-y-6 transition-all duration-300`}>
                 {messages.length === 0 && (
                   <div className="text-center space-y-8 py-16">
-                    <div className="relative">
-                      <div className={`${messages.length > 0 && recommendationHistory.length > 0 ? 'w-20 h-20' : 'w-24 h-24'} ${mode === 'buyer' ? 'bg-gradient-to-br from-secondary to-secondary/80' : 'bg-gradient-to-br from-primary to-primary/80'} rounded-full flex items-center justify-center mx-auto shadow-glow animate-float`}>
+                    <div className="relative ">
+                      <div className={`${messages.length > 0 && recommendationHistory.length > 0 ? 'w-20 h-20' : 'w-24 h-24'} ${mode === 'buyer' ? 'bg-gradient-to-br from-secondary to-secondary/80' : 'bg-gradient-to-br from-secondary to-secondary/80'} rounded-full flex items-center justify-center mx-auto shadow-glow animate-float`}>
                         {mode === 'buyer' ? (
                           <Search className={`${messages.length > 0 && recommendationHistory.length > 0 ? 'w-10 h-10' : 'w-12 h-12'} text-white`} />
                         ) : (

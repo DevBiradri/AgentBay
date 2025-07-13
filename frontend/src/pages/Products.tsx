@@ -136,7 +136,7 @@ const Products = () => {
           <Button
             variant="ghost"
             onClick={() => navigate("/chat")}
-            className="mr-4 hover:bg-white/10"
+            className="mr-4 hover:bg-primary/10"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back

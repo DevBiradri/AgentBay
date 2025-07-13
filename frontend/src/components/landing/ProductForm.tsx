@@ -154,8 +154,8 @@ const ProductForm: React.FC<ProductFormProps> = ({
             </>
           ) : (
             <>
-              <Upload className="w-4 h-4 mr-2" />
-              Choose Image
+              <Upload className="w-4 h-4 mr-2 dark:text-black" />
+              <span className='dark:text-black'>Choose Image</span>
             </>
           )}
         </label>
@@ -257,15 +257,11 @@ const ProductForm: React.FC<ProductFormProps> = ({
       <div className="flex space-x-4">
         <button
           type="submit"
-          className={`flex items-center px-6 py-3 font-semibold rounded-lg transition-all ${
-            submitButtonColor
-              ? `${submitButtonColor} ${submitButtonColor.includes("white") ? "text-black" : "text-white"}`
-              : "bg-gradient-to-r from-primary to-primary/90 text-white !important hover:from-primary/90 hover:to-primary"
-          }`}
+          className={"flex items-center px-6 py-3 text-white font-semibold rounded-lg transition-all bg-primary  hover:from-primary/90 hover:to-primary dark:text-black"}
           style={{ fontSize: "1.15rem" }}
           disabled={imageLoading}
         >
-          <Save className="w-4 h-4 mr-2" />
+          <Save className="w-4 h-4 mr-2 dark:text-black" />
           {imageLoading ? "Processing..." : "Publish Listing"}
         </button>
         <button

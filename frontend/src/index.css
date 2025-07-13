@@ -196,3 +196,28 @@ select:focus {
   background: rgba(0, 0, 0, 0.3) !important; /* Dark semi-transparent background */
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
+
+
+ /* For Webkit browsers (Chrome, Edge, Safari) */
+  ::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.2); /* White, low opacity */
+    border-radius: 6px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+    transition: background-color 0.3s;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(255, 255, 255, 0.4); /* Slightly more visible on hover */
+  }
+
+  /* #2463eb primary */
+  /* #14522d secondary */
