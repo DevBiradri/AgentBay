@@ -1,6 +1,5 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional
-from dataclasses import asdict
 from datetime import datetime
 from ..enums.enums import BidStatus
 
@@ -17,19 +16,19 @@ class Product(BaseModel):
     confidence_score: float = Field(default=0.7)
     image_url: Optional[str] = None
 
-class Bid:
-    bid_id: str
+class Bid(BaseModel):
     user_id: str
     product_id: str
     amount: float
-    timestamp: datetime
+    timestamp: Optional[datetime] = None
     status: BidStatus
     is_auto_bid: bool = False
     max_auto_bid: Optional[float] = None
     
     def to_dict(self):
-        d = asdict(self)
-        d['timestamp'] = self.timestamp.isoformat()
+        d = self.model_dump()
+        if self.timestamp:
+            d['timestamp'] = self.timestamp.isoformat()
         d['status'] = self.status.value
         return d
     

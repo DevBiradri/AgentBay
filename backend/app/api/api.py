@@ -57,6 +57,27 @@ async def save_uploaded_file(file: UploadFile) -> str:
     
     return str(file_path)
 
+# === STATIC FILE ENDPOINTS ===
+@app.get("/uploads/images/{filename}")
+async def get_image(filename: str):
+    """Serve uploaded images"""
+    try:
+        # Construct the file path
+        file_path = Path("uploads/images") / filename
+        
+        # Check if file exists
+        if not file_path.exists():
+            raise HTTPException(status_code=404, detail="Image not found")
+        
+        # Return the file
+        return FileResponse(
+            path=str(file_path),
+            media_type="image/*",
+            headers={"Cache-Control": "public, max-age=3600"}  # Cache for 1 hour
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to serve image: {str(e)}")
+
 # === AGENT ENDPOINTS ===
 @app.post("/api/agent/create-listing")
 async def create_listing(
@@ -136,6 +157,21 @@ async def get_recommendations(request: RecommendationRequest):
 
 # === PRODUCT ENDPOINTS ===
 
+@app.get("/api/products")
+async def get_products(
+    product_service: ProductService = Depends(get_product_service)
+):
+    """Get all products"""
+    try:
+        products_db = product_service.get_all_products()
+        
+        products = [product_db_to_pydantic(p) for p in products_db]
+        
+        return products
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get products: {str(e)}")
+
+
 @app.post("/api/products", response_model=dict)
 async def create_product(
     request: ProductCreateRequest,
@@ -206,15 +242,15 @@ async def create_bid(
             raise HTTPException(status_code=404, detail="Product not found")
         
         # Create bid object
-        bid = Bid()
-        bid.bid_id = request.bid_id
-        bid.user_id = request.user_id
-        bid.product_id = str(product_id)
-        bid.amount = request.amount
-        bid.timestamp = None
-        bid.status = BidStatus.ACTIVE
-        bid.is_auto_bid = request.is_auto_bid
-        bid.max_auto_bid = request.max_auto_bid
+        bid = Bid(
+            user_id=request.user_id,
+            product_id=str(product_id),
+            amount=request.amount,
+            timestamp=None,
+            status=BidStatus.ACTIVE,
+            is_auto_bid=request.is_auto_bid,
+            max_auto_bid=request.max_auto_bid
+        )
         
         bid_db = bid_service.create_bid(bid, product_id)
         if not bid_db:

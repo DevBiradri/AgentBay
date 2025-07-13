@@ -12,6 +12,7 @@ def product_db_to_pydantic(product_db: ProductDB) -> Product:
     Convert SQLAlchemy ProductDB model to Pydantic Product model.
     """
     return Product(
+        id=product_db.id,
         title=product_db.title,
         description=product_db.description,
         condition=product_db.condition,
@@ -47,19 +48,17 @@ def product_pydantic_to_db(product: Product) -> ProductDB:
 
 def bid_db_to_pydantic(bid_db: BidDB) -> Bid:
     """
-    Convert SQLAlchemy BidDB model to Pydantic-like Bid model.
-    Note: Bid class is not a Pydantic model, so we return a Bid instance.
+    Convert SQLAlchemy BidDB model to Pydantic Bid model.
     """
-    bid = Bid()
-    bid.bid_id = bid_db.bid_id
-    bid.user_id = bid_db.user_id
-    bid.product_id = str(bid_db.product_id)
-    bid.amount = bid_db.amount
-    bid.timestamp = bid_db.timestamp
-    bid.status = BidStatus(bid_db.status)
-    bid.is_auto_bid = bid_db.is_auto_bid
-    bid.max_auto_bid = bid_db.max_auto_bid
-    return bid
+    return Bid(
+        user_id=bid_db.user_id,
+        product_id=str(bid_db.product_id),
+        amount=bid_db.amount,
+        timestamp=bid_db.timestamp,
+        status=BidStatus(bid_db.status),
+        is_auto_bid=bid_db.is_auto_bid,
+        max_auto_bid=bid_db.max_auto_bid
+    )
 
 
 def bid_pydantic_to_db(bid: Bid, product_id: int) -> BidDB:
@@ -67,7 +66,6 @@ def bid_pydantic_to_db(bid: Bid, product_id: int) -> BidDB:
     Convert Bid model to SQLAlchemy BidDB model.
     """
     return BidDB(
-        bid_id=bid.bid_id,
         user_id=bid.user_id,
         product_id=product_id,
         amount=bid.amount,

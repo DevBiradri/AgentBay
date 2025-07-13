@@ -36,7 +36,7 @@ class BidService:
             session.add(bid_db)
             self.db_manager.commit_session(session)
             session.refresh(bid_db)
-            logger.info(f"Created bid: {bid_db.bid_id} for product {product_id}")
+            logger.info(f"Created bid: {bid_db.id} for product {product_id}")
             return bid_db
         except Exception as e:
             self.db_manager.rollback_session(session)
@@ -57,17 +57,6 @@ class BidService:
         finally:
             self.db_manager.close_session(session)
     
-    def get_bid_by_bid_id(self, bid_id: str) -> Optional[BidDB]:
-        """Get a bid by its external bid ID"""
-        session = self.db_manager.create_session()
-        try:
-            bid = session.query(BidDB).filter(BidDB.bid_id == bid_id).first()
-            return bid
-        except Exception as e:
-            logger.error(f"Error getting bid by bid_id '{bid_id}': {e}")
-            return None
-        finally:
-            self.db_manager.close_session(session)
     
     def get_bids_by_product(self, product_id: int, limit: int = 100) -> List[BidDB]:
         """Get all bids for a specific product"""
@@ -145,7 +134,7 @@ class BidService:
             bid.status = status.value
             self.db_manager.commit_session(session)
             session.refresh(bid)
-            logger.info(f"Updated bid {bid.bid_id} status to {status.value}")
+            logger.info(f"Updated bid {bid.id} status to {status.value}")
             return bid
             
         except Exception as e:
@@ -167,7 +156,7 @@ class BidService:
             bid.timestamp = datetime.now()
             self.db_manager.commit_session(session)
             session.refresh(bid)
-            logger.info(f"Updated bid {bid.bid_id} amount to {new_amount}")
+            logger.info(f"Updated bid {bid.id} amount to {new_amount}")
             return bid
             
         except Exception as e:
@@ -187,7 +176,7 @@ class BidService:
             
             session.delete(bid)
             self.db_manager.commit_session(session)
-            logger.info(f"Deleted bid: {bid.bid_id}")
+            logger.info(f"Deleted bid: {bid.id}")
             return True
             
         except Exception as e:

@@ -44,7 +44,6 @@ class BidDB(Base):
     __tablename__ = "bids"
     
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    bid_id = Column(String(100), unique=True, nullable=False, index=True)  # External bid ID
     user_id = Column(String(100), nullable=False, index=True)
     product_id = Column(Integer, ForeignKey("products.id"), nullable=False, index=True)
     amount = Column(Float, nullable=False)
@@ -61,4 +60,4 @@ class BidDB(Base):
     product = relationship("ProductDB", back_populates="bids")
     
     def __repr__(self):
-        return f"<BidDB(id={self.id}, bid_id='{self.bid_id}', amount={self.amount}, status='{self.status}')>"
+        return f"<BidDB(id={self.id}, amount={self.amount}, status='{self.status}')>"

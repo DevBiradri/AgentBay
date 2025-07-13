@@ -94,8 +94,9 @@ class RecommendationAgentOrchestrator:
 
             # Convert products to dict format for Gemini
             products_for_gemini = []
-            for product in products_list:
-                products_for_gemini.append({
+            for i, product in enumerate(products_list):
+                product_dict = {
+                    "id": products_db[i].id,  # Include the database ID
                     "title": product.title,
                     "description": product.description,
                     "category": product.category,
@@ -103,8 +104,10 @@ class RecommendationAgentOrchestrator:
                     "model": product.model,
                     "current_bid": product.current_bid,
                     "suggested_price": product.suggested_price,
-                    "tags": product.tags
-                })
+                    "tags": product.tags,
+                    "image_url": product.image_url
+                }
+                products_for_gemini.append(product_dict)
 
             # Use Gemini to find related products
             model = genai.GenerativeModel('gemini-2.0-flash')
