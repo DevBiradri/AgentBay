@@ -10,7 +10,7 @@ import NotFound from "./pages/NotFound";
 import Signup from "./pages/Signup";
 import Signin from "./pages/Signin";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import { Architecture } from "./pages/Architecture";
+import {Architecture}  from "./pages/Architecture";
 
 const queryClient = new QueryClient();
 

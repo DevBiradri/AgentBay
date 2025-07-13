@@ -1,22 +1,17 @@
-import { useEffect, useState } from "react";
+
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge"; // Added Badge import
 import { ArrowLeft, Bot, Gavel } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import Swal from 'sweetalert2';
 
+import  ArchitectureSVG from "@/assets/architecture.svg";
 
+export const Architecture = () => {
+  const navigate = useNavigate();
 
-export const Architecture = ()=>{
-    const navigate = useNavigate();
-
-    return (
+  return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-           {/* Header/Navbar */}
+     
       <nav className="relative z-10 border-b border-border/20 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center">
           <Button
@@ -44,8 +39,13 @@ export const Architecture = ()=>{
         </div>
       </nav>
 
-
+      <h1 className="w-full text-center mt-10 text-[5vw] font-bold text-black dark:text-white">
+  AI Agents Architecture
+</h1>
+      <div className=" flex  justify-center overflow-auto">
+      <img className="w-[60%] " src={ArchitectureSVG} alt="Architecture" />
+      </div>
     </div>
-
-    )
-}
+   
+  );
+};

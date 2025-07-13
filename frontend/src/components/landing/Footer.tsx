@@ -1,4 +1,5 @@
 import { Sparkles } from "lucide-react";
+import { AnimatedTooltipPreview } from "./AnimatedTooltip";
 
 const Footer = () => {
   return (
@@ -9,7 +10,11 @@ const Footer = () => {
             <Sparkles className="h-6 w-6 text-primary" />
             <span className="text-xl font-bold">AgentBay</span>
           </div>
-          <p className="text-muted-foreground">
+          <div className=" min-w-[60%]">
+          <AnimatedTooltipPreview />
+
+          </div>
+          <p className="text-muted-foreground min-w-50">
             © 2024 AgentBay. All rights reserved.
           </p>
         </div>

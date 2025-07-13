@@ -1,10 +1,8 @@
 <svg viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
   <!-- Background -->
-  <rect width="800" height="600" fill="#f8fafc"/>
+  <rect width="800" height="600" fill="transparent"/>
   
-  <!-- Title -->
-  <text x="400" y="30" text-anchor="middle" font-family="Arial" font-size="18" font-weight="bold" fill="#1e293b">AI Agents Architecture</text>
-  
+
   <!-- Frontend -->
   <rect x="50" y="60" width="700" height="80" fill="#e0f2fe" stroke="#0891b2" stroke-width="2" rx="8"/>
   <text x="400" y="85" text-anchor="middle" font-family="Arial" font-size="14" font-weight="bold" fill="#0891b2">Frontend Layer</text>

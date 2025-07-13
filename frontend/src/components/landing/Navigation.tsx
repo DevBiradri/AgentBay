@@ -16,7 +16,7 @@ const Navigation = () => {
           </span>
         </div>
         <div className="ml-auto flex items-center space-x-4">
-          <Button variant="ghost" onClick={()=> navigate('/signin')}>Sign In</Button>
+          <Button variant="ghost" onClick={()=> navigate('/architecture')}>System Architecture</Button>
           <Button variant="hero" onClick={() => navigate('/chat')}>Get Started</Button>
           <ThemeToggle />
         </div>

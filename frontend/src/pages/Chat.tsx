@@ -300,7 +300,10 @@ const Chat = () => {
         {/* Header */}
         <nav className="relative z-10 border-b border-border/20 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
           <div className="container flex h-16 items-center">
-            <Button variant="ghost" onClick={() => navigate('/')} className="mr-4 hover:bg-primary/10">
+            <Button variant="ghost" onClick={() => {
+              setIsListening(false);
+              navigate('/');
+            }} className="mr-4 hover:bg-primary/10">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back
             </Button>
@@ -439,7 +442,10 @@ const Chat = () => {
       {/* Header */}
       <nav className="relative z-10 border-b border-border/20 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 flex-shrink-0">
         <div className="container flex h-16 items-center">
-          <Button variant="ghost" onClick={resetToSelection} className="mr-4 hover:bg-primary/10 dark:hover:bg-white/10">
+          <Button variant="ghost" onClick={() => {
+           setIsListening(false);
+            resetToSelection();
+            }} className="mr-4 hover:bg-primary/10 dark:hover:bg-white/10">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
@@ -479,9 +485,9 @@ const Chat = () => {
 
         {/* Left Side - Chat Messages */}
         <div className={`${messages.length > 0 && recommendationHistory.length > 0 && !isRecommendationsPanelCollapsed ? 'w-1/2 border-r border-border/20' : 'w-full'} flex flex-col transition-all duration-300`}>
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto  ">
             <div className="p-6 h-full">
-              <div className={`${messages.length > 0 && recommendationHistory.length > 0 ? 'max-w-2xl' : 'max-w-4xl'} mx-auto space-y-6 transition-all duration-300`}>
+              <div className={`${messages.length > 0 && recommendationHistory.length > 0 ? 'max-w-2xl' : 'max-w-4xl' } mx-auto space-y-6  transition-all duration-300`}>
                 {messages.length === 0 && (
                   <div className="text-center space-y-8 py-16">
                     <div className="relative ">
