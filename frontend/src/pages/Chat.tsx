@@ -79,6 +79,59 @@ const Chat = () => {
     // console.log("Listening state changed:", isListening); // Removed console.log
   }, [isListening]);
 
+  useEffect(() => {
+    let audioContext;
+    let analyser;
+    let microphone;
+    let silenceTimeout;
+
+    const startMonitoring = async () => {
+      audioContext = new (window.AudioContext)();
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      microphone = audioContext.createMediaStreamSource(stream);
+      analyser = audioContext.createAnalyser();
+      microphone.connect(analyser);
+      analyser.fftSize = 512;
+
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+      const detectSilence = () => {
+        analyser.getByteFrequencyData(dataArray);
+        const volume = dataArray.reduce((a, b) => a + b) / dataArray.length;
+
+        if (volume < 5) { // Adjust threshold as needed
+          if (!silenceTimeout) {
+            silenceTimeout = setTimeout(() => {
+              SpeechRecognition.stopListening();
+              setIsListening(false);
+              audioContext.close();
+            }, 2000); // 2 seconds of silence
+          }
+        } else {
+          clearTimeout(silenceTimeout);
+          silenceTimeout = null;
+        }
+
+        if (isListening) {
+          requestAnimationFrame(detectSilence);
+        }
+      };
+
+      detectSilence();
+    };
+
+    if (isListening) {
+      startMonitoring();
+    }
+
+    return () => {
+      if (audioContext) {
+        audioContext.close();
+      }
+      clearTimeout(silenceTimeout);
+    };
+  }, [isListening]);
+
   const toggleMic = () => {
     if (!browserSupportsSpeechRecognition) {
       alert("Speech recognition is not supported in your browser.");

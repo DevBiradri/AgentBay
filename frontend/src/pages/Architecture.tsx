@@ -4,14 +4,14 @@ import { ArrowLeft, Bot, Gavel } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
-import  ArchitectureSVG from "@/assets/architecture.svg";
+import ArchitectureSVG from "@/assets/architecture.svg";
 
 export const Architecture = () => {
   const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
-     
+
       <nav className="relative z-10 border-b border-border/20 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-16 items-center">
           <Button
@@ -39,13 +39,13 @@ export const Architecture = () => {
         </div>
       </nav>
 
-      <h1 className="w-full text-center mt-10 text-[5vw] font-bold text-black dark:text-white">
-  AI Agents Architecture
-</h1>
+      <h1 className="w-full text-center mt-10 text-[3vw] font-bold text-black dark:text-white">
+        AI Agents Architecture
+      </h1>
       <div className=" flex  justify-center overflow-auto">
-      <img className="w-[60%] " src={ArchitectureSVG} alt="Architecture" />
+        <img className="w-[60%] " src={ArchitectureSVG} alt="Architecture" />
       </div>
     </div>
-   
+
   );
 };

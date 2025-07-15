@@ -1,0 +1,8 @@
+# Create New Migration
+uv run alembic revision --autogenerate -m "Comment Here"
+
+# Update Database
+uv run alembic upgrade head
+
+# Start Application
+uvicorn app.api.api:app --reload
